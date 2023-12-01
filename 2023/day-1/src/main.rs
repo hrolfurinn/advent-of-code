@@ -24,21 +24,36 @@ fn main()  -> std::io::Result<()> {
     let f: File = File::open(input_path)?;
     let reader: BufReader<File> = BufReader::new(f);
 
-    let mut sum: i16 = 0;
+    let mut sum: u32 = 0;
+
+    // println!("{}", create_number("abc".to_string()));
 
     for line in reader.lines() {
-        let output = &line?;
-        println!("{output}");
+        sum = sum + create_number(line?);
     }
 
     // let _ = grrs::find_matches(reader, &args.pattern, &mut stdout())?;
 
+    println!("{sum}");
+
     Ok(())
 }
 
-// fn create_number(line: ) -> i16 {
-
-// }
+fn create_number(line: String) -> u32 {
+    let mut first_digit: char = '\0';
+    let mut last_digit: char = '\0';
+    for character in line.chars() {
+        if character.is_digit(10) {
+            if first_digit == '\0' {
+                first_digit = character;
+            }
+            else {
+                last_digit = character;
+            }
+        }
+    }
+    10*first_digit.to_digit(10).unwrap_or(0) as u32 + last_digit.to_digit(10).unwrap_or(0) as u32
+}
 
 // #[test]
 // fn find_match() {
