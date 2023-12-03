@@ -19,25 +19,25 @@ fn main() -> std::io::Result<()> {
 
     for line in reader.lines() {
         let mut line = line?;
-        line.extend(['\0','\0','\0','\0'].iter());
-        println!("{:?}", line.clone());
+        line.extend(['\0', '\0', '\0', '\0'].iter());
+        // println!("{:?}", line.clone());
         let number = create_number_with_letters(line);
-        println!("{:?}", number);
+        // println!("{:?}", number);
         sum = sum + number;
     }
 
-    let test_string = "bbdlvtsjhjst88".to_string();
-    println!("Test string: {:?}", test_string);
-    let number = create_number_with_letters(test_string);
-    println!("Number: {:?}", number);
+    println!("{sum}");
+
+    // let test_string = "bbdlvtsjhjst88".to_string();
+    // println!("Test string: {:?}", test_string);
+    // let number = create_number_with_letters(test_string);
+    // println!("Number: {:?}", number);
 
     // let _ = grrs::find_matches(reader, &args.pattern, &mut stdout())?;
 
-    println!("{sum}");
-
-    println!("testing");
-    let test_num = create_number_with_letters("onetwothree".to_string());
-    println!("{test_num}");
+    // println!("testing");
+    // let test_num = create_number_with_letters("onetwothree".to_string());
+    // println!("{test_num}");
 
     Ok(())
 }
