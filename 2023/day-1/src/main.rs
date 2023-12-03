@@ -2,7 +2,7 @@
 // use clap::Parser;
 use std::fs::File;
 // use std::io::{stdout, BufRead, BufReader, Cursor};
-use std::io::{BufRead, BufReader};
+use std::io::{BufRead, BufReader, Bytes};
 // use std::path::Path;
 
 // #[derive(Parser)]
@@ -13,6 +13,9 @@ use std::io::{BufRead, BufReader};
 
 // #[derive(Debug)]
 // struct CustomError(String);
+// const DIGITS: [&str; 2] = [
+//     "1", "2",
+// ];
 const DIGITS: [&str; 18] = [
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
     "seven", "eight", "nine",
@@ -20,23 +23,25 @@ const DIGITS: [&str; 18] = [
 
 fn main() -> std::io::Result<()> {
     // env_logger::init();
-    
+
     // log::info!("Starting up.");
     // let args: Cli = Cli::parse();
     let input_path: String = String::from("./input/input.txt");
     // let output_path: String = String::from("./output/output.txt");
-    
+
     let f: File = File::open(input_path)?;
     let reader: BufReader<File> = BufReader::new(f);
 
-    
     let mut sum: u32 = 0;
-
 
     // println!("{}", create_number("abc".to_string()));
 
     for line in reader.lines() {
-        sum = sum + create_number(line?);
+        let line = line?;
+        println!("{:?}", line.clone());
+        let number = create_number_with_letters(line);
+        println!("{:?}", number);
+        sum = sum + number;
     }
 
     // let _ = grrs::find_matches(reader, &args.pattern, &mut stdout())?;
@@ -44,7 +49,7 @@ fn main() -> std::io::Result<()> {
     println!("{sum}");
 
     println!("testing");
-    let test_num = create_number_with_letters("onetwothreefour".to_string());
+    let test_num = create_number_with_letters("onetwothree".to_string());
     println!("{test_num}");
 
     Ok(())
@@ -68,21 +73,43 @@ fn create_number(line: String) -> u32 {
 
 fn create_number_with_letters(line: String) -> u32 {
     let windows: std::slice::Windows<'_, u8> = line[..].as_bytes().windows(5);
-    println!("{:?}", windows);
+    // println!("{:?}", windows);
     // convert all byte windows to the equivalent number, based on the digits iterator
     // filter out the ones that don't map to a number
-    let found_digits = windows.into_iter().filter_map(|byte_slice| convert_to_number(byte_slice));
-    println!("{:?}", found_digits);
-    found_digits.sum()
+    let found_digits: Vec<_> = windows
+        .into_iter()
+        .filter_map(|byte_slice| convert_to_number(byte_slice.iter())).collect();
+    // println!("{:?}", found_digits.clone());
+    10*(*found_digits.first().unwrap_or(&0)) as u32 + (*found_digits.last().unwrap_or(&0)) as u32
 }
 
-fn convert_to_number(byte_slice: &[u8]) -> Option<u32>{
-    println!("In covert to number for slice {:?}", byte_slice);
-    let digit_iterators = DIGITS.iter().map(|digit| digit.as_bytes().iter());
-    for digit in digit_iterators {
-        println!("{:?}", digit);
+fn convert_to_number(byte_slice: std::slice::Iter<'_, u8>) -> Option<u32> {
+    // println!("In covert to number for slice {:?}", byte_slice);
+    let mut digit_iterators = DIGITS
+        .iter()
+        .enumerate()
+        .map(|(index, digit)| (index as u32, digit.as_bytes().iter()));
+    let filtered: Vec<_> = digit_iterators
+        .filter_map(|(digit, digit_iterator)| {
+            let is_match = digit_iterator
+                .clone()
+                .eq(byte_slice.clone().take(digit_iterator.clone().len()));
+            if is_match {
+                // println!("Matched: {:?}", digit_iterator.clone());
+                Some((digit % 9) + 1)
+            } else {
+                None
+            }
+        }).collect();
+    // println!("{:?}", filtered);
+    // assert_eq!(digit_iterators.next()?.next(), Some(&"2".as_bytes()[0]));
+    // filtered.into_iter().sum()
+    if filtered.is_empty() {
+        None
     }
-    Some(2)
+    else {
+        Some(filtered[0])
+    }
 }
 
 // #[test]
