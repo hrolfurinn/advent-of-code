@@ -3,46 +3,33 @@
 use std::fs::File;
 // use std::io::{stdout, BufRead, BufReader, Cursor};
 use std::io::{BufRead, BufReader, Bytes};
-// use std::path::Path;
 
-// #[derive(Parser)]
-// struct Cli {
-//     pattern: String,
-//     path: PathBuf,
-// }
-
-// #[derive(Debug)]
-// struct CustomError(String);
-// const DIGITS: [&str; 2] = [
-//     "1", "2",
-// ];
 const DIGITS: [&str; 18] = [
     "1", "2", "3", "4", "5", "6", "7", "8", "9", "one", "two", "three", "four", "five", "six",
     "seven", "eight", "nine",
 ];
 
 fn main() -> std::io::Result<()> {
-    // env_logger::init();
-
-    // log::info!("Starting up.");
-    // let args: Cli = Cli::parse();
     let input_path: String = String::from("./input/input.txt");
-    // let output_path: String = String::from("./output/output.txt");
 
     let f: File = File::open(input_path)?;
     let reader: BufReader<File> = BufReader::new(f);
 
     let mut sum: u32 = 0;
 
-    // println!("{}", create_number("abc".to_string()));
-
     for line in reader.lines() {
-        let line = line?;
+        let mut line = line?;
+        line.extend(['\0','\0','\0','\0'].iter());
         println!("{:?}", line.clone());
         let number = create_number_with_letters(line);
         println!("{:?}", number);
         sum = sum + number;
     }
+
+    let test_string = "bbdlvtsjhjst88".to_string();
+    println!("Test string: {:?}", test_string);
+    let number = create_number_with_letters(test_string);
+    println!("Number: {:?}", number);
 
     // let _ = grrs::find_matches(reader, &args.pattern, &mut stdout())?;
 
@@ -55,22 +42,6 @@ fn main() -> std::io::Result<()> {
     Ok(())
 }
 
-fn create_number(line: String) -> u32 {
-    let mut first_digit: char = '\0';
-    let mut last_digit: char = '\0';
-    for character in line.chars() {
-        if character.is_digit(10) {
-            if first_digit == '\0' {
-                first_digit = character;
-                last_digit = character;
-            } else {
-                last_digit = character;
-            }
-        }
-    }
-    10 * first_digit.to_digit(10).unwrap_or(0) as u32 + last_digit.to_digit(10).unwrap_or(0) as u32
-}
-
 fn create_number_with_letters(line: String) -> u32 {
     let windows: std::slice::Windows<'_, u8> = line[..].as_bytes().windows(5);
     // println!("{:?}", windows);
@@ -78,9 +49,10 @@ fn create_number_with_letters(line: String) -> u32 {
     // filter out the ones that don't map to a number
     let found_digits: Vec<_> = windows
         .into_iter()
-        .filter_map(|byte_slice| convert_to_number(byte_slice.iter())).collect();
+        .filter_map(|byte_slice| convert_to_number(byte_slice.iter()))
+        .collect();
     // println!("{:?}", found_digits.clone());
-    10*(*found_digits.first().unwrap_or(&0)) as u32 + (*found_digits.last().unwrap_or(&0)) as u32
+    10 * (*found_digits.first().unwrap_or(&0)) as u32 + (*found_digits.last().unwrap_or(&0)) as u32
 }
 
 fn convert_to_number(byte_slice: std::slice::Iter<'_, u8>) -> Option<u32> {
@@ -100,28 +72,14 @@ fn convert_to_number(byte_slice: std::slice::Iter<'_, u8>) -> Option<u32> {
             } else {
                 None
             }
-        }).collect();
+        })
+        .collect();
     // println!("{:?}", filtered);
     // assert_eq!(digit_iterators.next()?.next(), Some(&"2".as_bytes()[0]));
     // filtered.into_iter().sum()
     if filtered.is_empty() {
         None
-    }
-    else {
+    } else {
         Some(filtered[0])
     }
 }
-
-// #[test]
-// fn find_match() {
-//     let data: &str = "lorem ipsum\ndolor sit amet";
-//     let pattern: &str = "lorem";
-
-//     let reader: BufReader<Cursor<&str>> = BufReader::new(Cursor::new(data));
-
-//     let mut result: Vec<u8> = Vec::new();
-
-//     let _ = grrs::find_matches(reader, pattern, &mut result);
-
-//     assert_eq!(result, b"lorem ipsum\n");
-// }
