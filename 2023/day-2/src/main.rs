@@ -1,79 +1,121 @@
-use std::collections::VecDeque;
+use std::str::FromStr;
 use std::fs::File;
-use std::io::{BufRead, BufReader, Result};
+use std::io::{self, BufRead};
 
-fn main() -> Result<()> {
-    let input_path: String = String::from("./input/input.txt");
-    let sample_input_path: String = String::from("./input/sample_input.txt");
+#[derive(Clone)]
+#[derive(Copy)]
+enum Color {
+    Red,
+    Green,
+    Blue,
+}
 
-    // let f: File = File::open(input_path)?;
-    let f: File = File::open(input_path)?;
-    let reader: BufReader<File> = BufReader::new(f);
+struct Game {
+    id: i32,
+    rounds: Vec<Vec<(Color, i32)>>, // Each round contains counts of each color
+}
 
-    let mut sum1 = 0;
-    let mut sum2 = 0;
-    let mut id = 0;
+impl FromStr for Color {
+    type Err = ();
 
-    let colors = ["red", "green", "blue"];
-
-    let color_count = |color: &str| {
-        for (index, c) in colors.iter().enumerate() {
-            if c.eq(&color) {
-                return Some(index + 12);
-            }
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        match input {
+            "red" => Ok(Color::Red),
+            "green" => Ok(Color::Green),
+            "blue" => Ok(Color::Blue),
+            _ => Err(()),
         }
-        return None;
-    };
+    }
+}
 
-    for mut line in reader.lines() {
-        let line = line?;
-        println!("Line: {:?}", line);
-        let mut segments = line.split(":").map(|s| {
-            s.split(";")
-                .map(|p| p.split(",").map(|r| r.split_whitespace()))
-        });
-        let id = segments
-            .next()
-            .unwrap()
-            .next()
-            .unwrap()
-            .next()
-            .unwrap()
-            .collect::<Vec<_>>()[1]
-            .parse::<i64>();
-        let all_correct = segments.clone().next().unwrap().all(|mut s| {
-            let segment_correct = s.all(|mut p| {
-                // println!({"{}"})
-                let is_correct = (p.next().unwrap().parse::<i64>().unwrap_or(0) as usize)
-                    .le(&color_count(p.next().unwrap()).unwrap());
-                return is_correct;
-            });
-            // println!("{:?}", &segment_correct);
-            return segment_correct;
-        });
-        if all_correct {
-            sum1 = sum1 + id.unwrap_or(0) as i64;
-        }
-        let mut reds = 0;
-        let mut greens = 0;
-        let mut blues = 0;
-        for mut segment in segments.next().unwrap() {
-            for mut color in segment {
-                let count = color.next().unwrap().parse::<i64>().unwrap_or(0);
-                match color.next().unwrap() {
-                    "red" => reds = reds.max(count),
-                    "blue" => blues = blues.max(count),
-                    "green" => greens = greens.max(count),
-                    &_ => panic!("Did not get a color!")
-                }
-            }
-        }
-        println!("{:?}", reds*greens*blues);
-        sum2 = sum2 + reds*greens*blues;
+fn parse_game(line: &str) -> Result<Game, &'static str> {
+    let parts: Vec<&str> = line.split(": ").collect();
+    if parts.len() != 2 {
+        return Err("Invalid game format");
     }
 
-    println!("{sum1}");
-    println!("{sum2}");
+    let id = parts[0]
+        .trim_start_matches("Game ")
+        .parse::<i32>()
+        .map_err(|_| "Invalid game ID")?;
+
+    let rounds = parts[1]
+        .split(';')
+        .map(|round| {
+            round
+                .split(',')
+                .map(|pair| {
+                    let mut parts = pair.trim().split_whitespace();
+                    let count = parts
+                        .next()
+                        .ok_or("Missing count")
+                        .and_then(|c| c.parse::<i32>().map_err(|_| "Invalid count"))?;
+                    let color = parts
+                        .next()
+                        .ok_or("Missing color")
+                        .and_then(|c| Color::from_str(c).map_err(|_| "Invalid color"))?;
+                    Ok((color, count))
+                })
+                .collect::<Result<Vec<_>, &'static str>>()
+        })
+        .collect::<Result<Vec<_>, &'static str>>()?;
+
+    Ok(Game { id, rounds })
+}
+
+fn is_game_possible(game: &Game, max_red: i32, max_green: i32, max_blue: i32) -> bool {
+    game.rounds.iter().all(|round| {
+        let (mut reds, mut greens, mut blues) = (0, 0, 0);
+        for &(color, count) in round {
+            match color {
+                Color::Red => reds += count,
+                Color::Green => greens += count,
+                Color::Blue => blues += count,
+            }
+        }
+        reds <= max_red && greens <= max_green && blues <= max_blue
+    })
+}
+
+fn min_cubes_for_game(game: &Game) -> (i32, i32, i32) {
+    let (mut max_red, mut max_green, mut max_blue) = (0, 0, 0);
+
+    for round in &game.rounds {
+        let (mut reds, mut greens, mut blues) = (0, 0, 0);
+        for &(color, count) in round {
+            match color {
+                Color::Red => reds = reds.max(count),
+                Color::Green => greens = greens.max(count),
+                Color::Blue => blues = blues.max(count),
+            }
+        }
+        max_red = max_red.max(reds);
+        max_green = max_green.max(greens);
+        max_blue = max_blue.max(blues);
+    }
+
+    (max_red, max_green, max_blue)
+}
+
+fn main() -> io::Result<()> {
+    let input_path = "./input/input.txt";
+    let file = File::open(input_path)?;
+    let reader = io::BufReader::new(file);
+
+    let mut sum_ids = 0;
+    let mut sum_power = 0;
+
+    for line in reader.lines() {
+        let game = parse_game(&line?).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        if is_game_possible(&game, 12, 13, 14) {
+            sum_ids += game.id;
+        }
+        let (min_red, min_green, min_blue) = min_cubes_for_game(&game);
+        sum_power += min_red * min_green * min_blue;
+    }
+
+    println!("Sum of Game IDs: {}", sum_ids);
+    println!("Sum of Power: {}", sum_power);
 
     Ok(())
 }
