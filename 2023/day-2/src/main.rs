@@ -40,11 +40,11 @@ fn main() -> Result<()> {
             .unwrap()
             .collect::<Vec<_>>()[1]
             .parse::<i64>();
-        let all_correct = segments.next().unwrap().all(|mut s| {
+        let all_correct = segments.clone().next().unwrap().all(|mut s| {
             let segment_correct = s.all(|mut p| {
                 // println!({"{}"})
                 let is_correct = (p.next().unwrap().parse::<i64>().unwrap_or(0) as usize)
-                    .lt(&color_count(p.next().unwrap()).unwrap());
+                    .le(&color_count(p.next().unwrap()).unwrap());
                 return is_correct;
             });
             println!("{:?}", &segment_correct);
