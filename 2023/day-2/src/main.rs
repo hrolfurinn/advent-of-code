@@ -7,7 +7,7 @@ fn main() -> Result<()> {
     let sample_input_path: String = String::from("./input/sample_input.txt");
 
     // let f: File = File::open(input_path)?;
-    let f: File = File::open(sample_input_path)?;
+    let f: File = File::open(input_path)?;
     let reader: BufReader<File> = BufReader::new(f);
 
     let mut sum1 = 0;
