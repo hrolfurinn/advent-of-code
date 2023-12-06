@@ -7,10 +7,11 @@ fn main() -> Result<()> {
     let sample_input_path: String = String::from("./input/sample_input.txt");
 
     // let f: File = File::open(input_path)?;
-    let f: File = File::open(input_path)?;
+    let f: File = File::open(sample_input_path)?;
     let reader: BufReader<File> = BufReader::new(f);
 
     let mut sum1 = 0;
+    let mut sum2 = 0;
     let mut id = 0;
 
     let colors = ["red", "green", "blue"];
@@ -47,15 +48,32 @@ fn main() -> Result<()> {
                     .le(&color_count(p.next().unwrap()).unwrap());
                 return is_correct;
             });
-            println!("{:?}", &segment_correct);
+            // println!("{:?}", &segment_correct);
             return segment_correct;
         });
         if all_correct {
             sum1 = sum1 + id.unwrap_or(0) as i64;
         }
+        let mut reds = 0;
+        let mut greens = 0;
+        let mut blues = 0;
+        for mut segment in segments.next().unwrap() {
+            for mut color in segment {
+                let count = color.next().unwrap().parse::<i64>().unwrap_or(0);
+                match color.next().unwrap() {
+                    "red" => reds = reds.max(count),
+                    "blue" => blues = blues.max(count),
+                    "green" => greens = greens.max(count),
+                    &_ => panic!("Did not get a color!")
+                }
+            }
+        }
+        println!("{:?}", reds*greens*blues);
+        sum2 = sum2 + reds*greens*blues;
     }
 
     println!("{sum1}");
+    println!("{sum2}");
 
     Ok(())
 }
