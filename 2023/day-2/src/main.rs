@@ -1,9 +1,8 @@
-use std::str::FromStr;
 use std::fs::File;
 use std::io::{self, BufRead};
+use std::str::FromStr;
 
-#[derive(Clone)]
-#[derive(Copy)]
+#[derive(Clone, Copy)]
 enum Color {
     Red,
     Green,
@@ -45,7 +44,7 @@ fn parse_game(line: &str) -> Result<Game, &'static str> {
             round
                 .split(',')
                 .map(|pair| {
-                    let mut parts = pair.trim().split_whitespace();
+                    let mut parts = pair.split_whitespace();
                     let count = parts
                         .next()
                         .ok_or("Missing count")
@@ -106,7 +105,8 @@ fn main() -> io::Result<()> {
     let mut sum_power = 0;
 
     for line in reader.lines() {
-        let game = parse_game(&line?).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+        let game =
+            parse_game(&line?).map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
         if is_game_possible(&game, 12, 13, 14) {
             sum_ids += game.id;
         }
