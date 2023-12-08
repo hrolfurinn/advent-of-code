@@ -7,6 +7,7 @@ use std::ops::Add;
 use std::str::FromStr;
 use std::thread::current;
 
+#[derive(Debug)]
 struct PartNumber {
     number: i32,
     indexes: Vec<usize>
@@ -40,6 +41,11 @@ fn ratio_check(current_lines: &VecDeque<String>, index: usize) -> Option<i32> {
     let mut numbers: Vec<PartNumber> = vec![];
     let mut skip = 0;
     for line in current_lines {
+        println!("{line}");
+    }
+
+    for line in current_lines {
+        println!("Investigating line {line}");
         let characters: Vec<_> = line.chars().collect();
         for (ix, c) in characters.iter().enumerate() {
             if skip != 0 {
@@ -47,27 +53,40 @@ fn ratio_check(current_lines: &VecDeque<String>, index: usize) -> Option<i32> {
                 continue;
             }
             if c.is_digit(10) {
+                println!("Found digit {} at index {}", c, ix);
                 let number: String = characters[ix..].iter().take_while(|c| c.is_digit(10)).collect();
                 let indexes: Vec<usize> = (ix..ix + number.len()).collect();
                 let part_number = PartNumber { number: number.parse::<i32>().unwrap(), indexes: indexes };
+                println!("Got part number {:?}", &part_number);
                 numbers.push(part_number);
-                let skip = number.len();
+                skip = number.len();
             }
         }
     }
     let mut count = 0;
     let mut ratio = 1;
+    println!("Validation");
+    for p_n in &numbers {
+        println!("{:?}", p_n);
+    }
 
-    for part_number in numbers {
+    for part_number in &numbers {
         for ix in start..=end {
             if part_number.indexes.contains(&ix) {
+                println!("Valid part number {:?}", part_number);
                 count += 1;
-                ratio += part_number.number; 
+                ratio *= part_number.number; 
+                break;
             }
             if count > 2 {
+                print!("Too many!");
                 return None
             }
         }
+    }
+    if count < 2 {
+        print!("Too few");
+        return None
     }
     return Some(ratio)
 }
@@ -103,7 +122,7 @@ fn main() -> Result<()> {
     let mut ongoing: bool = true;
 
     while ongoing {
-        // println!("{:?}", ".".to_string().repeat(50));
+        println!("{:?}", ".".to_string().repeat(50));
         // println!("NEW LINE");
         // println!("{:?}", line);
         if let Some(Ok(next_line)) = lines.next() {
@@ -142,6 +161,7 @@ fn main() -> Result<()> {
                 }
             }
             if *character == '*' {
+                println!("POTENTIAL GEAR");
                 if let Some(ratio) = ratio_check(&current_lines, ix) {
                     p2 += ratio;
                 } else {
