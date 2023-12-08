@@ -7,6 +7,11 @@ use std::ops::Add;
 use std::str::FromStr;
 use std::thread::current;
 
+struct PartNumber {
+    number: i32,
+    indexes: Vec<usize>
+}
+
 fn neighbor_check(current_lines: &VecDeque<String>, index: usize, num_length: usize) -> bool {
     let start = index - 1;
     let end = index + num_length;
@@ -29,14 +34,49 @@ fn neighbor_check(current_lines: &VecDeque<String>, index: usize, num_length: us
 }
 
 fn ratio_check(current_lines: &VecDeque<String>, index: usize) -> Option<i32> {
-    Some(2)
+    let start = index - 1;
+    let end = index + 1;
+    let indices = start..=end;
+    let mut numbers: Vec<PartNumber> = vec![];
+    let mut skip = 0;
+    for line in current_lines {
+        let characters: Vec<_> = line.chars().collect();
+        for (ix, c) in characters.iter().enumerate() {
+            if skip != 0 {
+                skip -= 1;
+                continue;
+            }
+            if c.is_digit(10) {
+                let number: String = characters[ix..].iter().take_while(|c| c.is_digit(10)).collect();
+                let indexes: Vec<usize> = (ix..ix + number.len()).collect();
+                let part_number = PartNumber { number: number.parse::<i32>().unwrap(), indexes: indexes };
+                numbers.push(part_number);
+                let skip = number.len();
+            }
+        }
+    }
+    let mut count = 0;
+    let mut ratio = 1;
+
+    for part_number in numbers {
+        for ix in start..=end {
+            if part_number.indexes.contains(&ix) {
+                count += 1;
+                ratio += part_number.number; 
+            }
+            if count > 2 {
+                return None
+            }
+        }
+    }
+    return Some(ratio)
 }
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
     let input_path = "./input/input.txt";
     let sample_input_path = "./input/sample_input.txt";
-    let file = File::open(input_path)?;
+    let file = File::open(sample_input_path)?;
     let reader = BufReader::new(file);
 
     let mut p1 = 0;
