@@ -44,25 +44,19 @@ fn main() -> Result<()> {
         counter.push(1);
     }
 
-    println!("Counter: {:?}", counter);
-    println!("Point tracker: {:?}", point_tracker);
-
     for card_ix in 0..counter.len() {
         match point_tracker[card_ix] {
-            0 => println!("No points here {card_ix}"),
+            0 => continue,
             _ => {
                 if card_ix + 1 < counter.len() {
-                    println!("in here");
                     for next_card_ix in card_ix + 1
                         ..(card_ix + point_tracker[card_ix] as usize + 1).min(counter.len())
                     {
                         counter[next_card_ix] += counter[card_ix];
-                        println!("Added {} to {}", counter[card_ix], next_card_ix)
                     }
                 }
             }
         }
-        println!("After {card_ix} have counter {:?}", counter)
     }
 
     p2 = counter.iter().sum();
