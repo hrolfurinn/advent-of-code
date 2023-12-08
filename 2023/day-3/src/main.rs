@@ -1,4 +1,4 @@
-use std::collections::{VecDeque};
+use std::collections::VecDeque;
 use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Result};
@@ -6,7 +6,7 @@ use std::io::{BufRead, BufReader, Result};
 #[derive(Debug)]
 struct PartNumber {
     number: i32,
-    indexes: Vec<usize>,
+    indexes: Vec<usize>
 }
 
 fn neighbor_check(current_lines: &VecDeque<String>, index: usize, num_length: usize) -> bool {
@@ -17,7 +17,7 @@ fn neighbor_check(current_lines: &VecDeque<String>, index: usize, num_length: us
         current_lines[0].chars().collect(),
         current_lines[1].chars().collect(),
         current_lines[2].chars().collect(),
-    ];
+        ];
     for ix in indices {
         if !(chars[0][ix] == '.' && chars[2][ix] == '.') {
             return true;
@@ -44,15 +44,9 @@ fn ratio_check(current_lines: &VecDeque<String>, index: usize) -> Option<i32> {
                 continue;
             }
             if c.is_digit(10) {
-                let number: String = characters[ix..]
-                    .iter()
-                    .take_while(|c| c.is_digit(10))
-                    .collect();
+                let number: String = characters[ix..].iter().take_while(|c| c.is_digit(10)).collect();
                 let indexes: Vec<usize> = (ix..ix + number.len()).collect();
-                let part_number = PartNumber {
-                    number: number.parse::<i32>().unwrap(),
-                    indexes: indexes,
-                };
+                let part_number = PartNumber { number: number.parse::<i32>().unwrap(), indexes: indexes };
                 numbers.push(part_number);
                 skip = number.len();
             }
@@ -65,18 +59,18 @@ fn ratio_check(current_lines: &VecDeque<String>, index: usize) -> Option<i32> {
         for ix in start..=end {
             if part_number.indexes.contains(&ix) {
                 count += 1;
-                ratio *= part_number.number;
+                ratio *= part_number.number; 
                 break;
             }
             if count > 2 {
-                return None;
+                return None
             }
         }
     }
     if count < 2 {
-        return None;
+        return None
     }
-    return Some(ratio);
+    return Some(ratio)
 }
 
 fn main() -> Result<()> {
@@ -95,7 +89,7 @@ fn main() -> Result<()> {
     macro_rules! pad {
         ($s:expr) => {
             format!(".{}.", $s)
-        };
+        }
     }
 
     let dummy_line: String = ["."].repeat(first_line.len() + 2).concat().into();
@@ -137,6 +131,7 @@ fn main() -> Result<()> {
                 if let Some(ratio) = ratio_check(&current_lines, ix) {
                     p2 += ratio;
                 } else {
+
                 }
             }
         }
