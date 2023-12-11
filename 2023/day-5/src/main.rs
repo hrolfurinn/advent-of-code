@@ -1,3 +1,4 @@
+use core::panic;
 use std::env;
 use std::error::Error;
 use std::fs::File;
@@ -30,93 +31,85 @@ fn split_seeds<'a>(
     mut seed_descriptions: &Vec<Vec<i64>>,
     mut mappings: &Vec<Vec<i64>>,
 ) -> Vec<Vec<i64>> {
-    println!("Seed descriptions {:?}", seed_descriptions);
-    println!("Mappings {:?}", mappings);
-    let mut new_seed_descriptions = seed_descriptions.clone();
-    for mapping in mappings {
+    // println!("Seed descriptions {:?}", seed_descriptions);
+    // println!("Mappings {:?}", mappings);
+    let mut new_seed_descriptions = vec![];
+    for seeds in seed_descriptions {
+        println!("{:?}", "-".repeat(20));
+        println!("In seed {:?}", seeds);
+        let mut changed = 0;
         let mut new_seeds = vec![];
-        for seeds in new_seed_descriptions {
-            println!("In seed {:?}", seeds);
-            let seed_start = (seeds[0], "s");
-            let seed_end = (seeds[0] + seeds[1] - 1, "s");
-            let seed_start_loc = seeds[0];
-            let seed_end_loc = seeds[0] + seeds[1];
+        for mapping in mappings {
             println!("In mapping {:?}", mapping);
+
+            let seed_start = (seeds[0], "s");
+            let seed_last = (seeds[0] + seeds[1] - 1, "s");
+            let s_start_loc = seeds[0];
+            let s_last_loc = seeds[0] + seeds[1] - 1;
+            let s_dist = seeds[1];
             let mapping_start = (mapping[1], "m");
-            let mapping_end = (mapping[1] + mapping[2]-1, "m");
-            let destination_mapping_start = mapping[0];
-            let destination_mapping_end = mapping[0] + mapping[2];
-            let source_mapping_start = mapping[1];
-            let source_mapping_end = mapping[1] + mapping[2];
-            let seed_to_mapping = mapping[1] - seeds[0];
-            let seed_dist_minus_seed_to_mapping = seeds[1] - seed_to_mapping;
-            let mut ordered_boundaries =
-                Vec::from([seed_start, seed_end, mapping_start, mapping_end]);
-            ordered_boundaries.sort_by(|(a, _), (b, _)| a.cmp(b));
-            let _ = match ordered_boundaries
-                .iter()
-                .map(|(_, a)| a.to_string())
-                .collect::<String>()
-                .as_str()
-            {
-                "ssmm" => {
-                    println!("ssmm");
-                    new_seeds.extend(vec![vec![seeds[0], seeds[1]]]);
+            let mapping_last = (mapping[1] + mapping[2] - 1, "m");
+            let dm_start_loc = mapping[0];
+            let dm_last_loc = mapping[0] + mapping[2] - 1;
+            let sm_start_loc = mapping[1];
+            let sm_last_loc = mapping[1] + mapping[2] - 1;
+            let m_dist = mapping[2];
+
+            if s_last_loc < sm_start_loc {
+                continue;
+            } else if sm_last_loc < s_start_loc {
+                continue;
+            } else if s_start_loc == sm_start_loc {
+                if s_last_loc <= sm_last_loc {
+                    new_seeds.push(vec![dm_start_loc, s_dist]);
+                    changed += 1;
+                } else {
+                    new_seeds.push(vec![dm_start_loc, m_dist]);
+                    new_seeds.push(vec![sm_last_loc + 1, s_dist - m_dist]);
+                    changed += 1;
                 }
-                "smsm" => {
-                    println!("smsm");
-                    new_seeds.extend(vec![
-                        vec![seed_start_loc, seed_to_mapping],
-                        vec![destination_mapping_start, seed_dist_minus_seed_to_mapping],
+            } else if s_start_loc < sm_start_loc {
+                new_seeds.push(vec![s_start_loc, sm_start_loc - s_start_loc]);
+                if s_last_loc <= sm_last_loc {
+                    new_seeds.push(vec![dm_start_loc, s_last_loc - sm_start_loc + 1]);
+                    changed += 1;
+                } else {
+                    new_seeds.push(vec![dm_start_loc, m_dist]);
+                    new_seeds.push(vec![sm_last_loc + 1, s_last_loc - sm_last_loc]);
+                    changed += 1;
+                }
+            } else if sm_start_loc < s_start_loc {
+                if s_last_loc <= sm_last_loc {
+                    new_seeds.push(vec![dm_start_loc + s_start_loc - sm_start_loc, s_dist]);
+                    changed += 1;
+                } else {
+                    new_seeds.push(vec![
+                        dm_start_loc + s_start_loc - sm_start_loc,
+                        sm_last_loc - s_start_loc + 1,
                     ]);
+                    new_seeds.push(vec![sm_last_loc, s_last_loc - sm_last_loc]);
+                    changed += 1;
                 }
-                "smms" => {
-                    println!("smms");
-                    new_seeds.extend(vec![
-                        vec![seeds[0], mapping[1] - seeds[0]],
-                        vec![
-                            destination_mapping_start,
-                            destination_mapping_end - destination_mapping_start,
-                        ],
-                        vec![
-                            mapping[1] + mapping[2],
-                            seeds[0] + seeds[1] - mapping[1] - mapping[2],
-                        ],
-                    ]);
-                }
-                "mssm" => {
-                    println!("mssm");
-                    new_seeds.extend(vec![vec![
-                        destination_mapping_start + (seeds[0] - mapping[1]),
-                        seeds[1],
-                    ]]);
-                }
-                "msms" => {
-                    println!("msms");
-                    new_seeds.extend(vec![
-                        vec![
-                            destination_mapping_start + (seeds[0] - mapping[1]),
-                            mapping[1] + mapping[2] - seeds[0],
-                        ],
-                        vec![
-                            source_mapping_end,
-                            seeds[0] + seeds[1] - mapping[1] - mapping[2],
-                        ],
-                    ]);
-                }
-                "mmss" => {
-                    println!("mmss");
-                    new_seeds.extend(vec![vec![seeds[0], seeds[1]]]);
-                }
-                _ => {
-                    println!("Something's awry in this match");
-                }
-            };
-            println!("Temp new seeds: {:?}", new_seeds)
+            } else {
+                panic!("WHAT THE FUCK HAOPPOPPEND");
+            }
         }
-        println!("New seeds: {:?}", new_seeds);
-        new_seed_descriptions = new_seeds;
+        let next_generation = match changed {
+            0 => vec![seeds.clone()],
+            1 => new_seeds,
+            _ => panic!("Too many changes!!"),
+        };
+        new_seed_descriptions.extend(next_generation);
     }
+    println!("old : {:?}", seed_descriptions);
+    println!("new: {:?}", new_seed_descriptions);
+    assert_eq!(
+        seed_descriptions.iter().map(|v| v[1] as i64).sum::<i64>(),
+        new_seed_descriptions
+            .iter()
+            .map(|v| v[1] as i64)
+            .sum::<i64>()
+    );
     return new_seed_descriptions;
 }
 
@@ -156,11 +149,9 @@ fn main() -> Result<(), Box<dyn Error>> {
             // for seed in &mut more_seeds {
             //     *seed = map_seed(seed, &mappings)
             // }
-            println!("Before, more seed length {:?}", more_seeds.len());
-            if !mappings.is_empty() && more_seeds.len() < 10 {
+            if !mappings.is_empty() {
                 more_seeds = split_seeds(&more_seeds, &mappings);
             }
-            println!("After, more seed length {:?}", more_seeds.len());
             mappings.clear();
             continue;
         }
@@ -183,6 +174,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         .filter_map(|v| if v.is_empty() { None } else { Some(v[0]) })
         .min()
         .unwrap();
+
+    println!("More seeds {:?}", more_seeds);
 
     println!("p1: {p1}");
     println!("p2: {p2}");
