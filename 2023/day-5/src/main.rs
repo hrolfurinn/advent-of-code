@@ -150,7 +150,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // env::set_var("RUST_BACKTRACE", "1");
     let input_path = "./input/input.txt";
     let sample_input_path = "./input/sample_input.txt";
-    let file = File::open(sample_input_path)?;
+    let file = File::open(input_path)?;
     let reader = BufReader::new(file);
 
     let mut p1 = 0;
