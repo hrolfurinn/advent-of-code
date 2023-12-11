@@ -33,75 +33,108 @@ fn split_seeds<'a>(
 ) -> Vec<Vec<i64>> {
     // println!("Seed descriptions {:?}", seed_descriptions);
     // println!("Mappings {:?}", mappings);
+    println!("{:?}", "-".repeat(40));
+    println!("{:?}", "-".repeat(40));
+
     let mut new_seed_descriptions = vec![];
-    for seeds in seed_descriptions {
-        println!("{:?}", "-".repeat(20));
+    let mut unchecked_seeds = seed_descriptions.clone();
+    let mut checked_seeds: Vec<Vec<i64>> = vec![];
+    let mut changed_seeds: Vec<Vec<i64>> = vec![];
+    while !unchecked_seeds.is_empty() {
+        let seeds = unchecked_seeds[0].clone();
+        println!("{:?}", "*".repeat(20));
         println!("In seed {:?}", seeds);
         let mut changed = 0;
-        let mut new_seeds = vec![];
         for mapping in mappings {
+            println!("{:?}", "-".repeat(10));
             println!("In mapping {:?}", mapping);
 
-            let seed_start = (seeds[0], "s");
-            let seed_last = (seeds[0] + seeds[1] - 1, "s");
             let s_start_loc = seeds[0];
             let s_last_loc = seeds[0] + seeds[1] - 1;
             let s_dist = seeds[1];
-            let mapping_start = (mapping[1], "m");
-            let mapping_last = (mapping[1] + mapping[2] - 1, "m");
+
             let dm_start_loc = mapping[0];
             let dm_last_loc = mapping[0] + mapping[2] - 1;
+
             let sm_start_loc = mapping[1];
             let sm_last_loc = mapping[1] + mapping[2] - 1;
+
             let m_dist = mapping[2];
 
+            // println!("s_start_loc: {:?}",s_start_loc);
+            println!("s_last_loc: {:?}",s_last_loc);
+            // println!("s_dist: {:?}",s_dist);
+
+            println!("dm_start_loc: {:?}",dm_start_loc);
+            println!("dm_last_loc: {:?}",dm_last_loc);
+
+            // println!("sm_start_loc: {:?}",sm_start_loc);
+            println!("sm_last_loc: {:?}",sm_last_loc);
+
+            println!("m_dist: {:?}",m_dist);
+
             if s_last_loc < sm_start_loc {
-                continue;
+                // checked_seeds.push(vec![s_start_loc, s_dist]);
+                println!("1");
+                continue
             } else if sm_last_loc < s_start_loc {
-                continue;
+                // checked_seeds.push(vec![s_start_loc, s_dist]);
+                println!("2");
+                continue
             } else if s_start_loc == sm_start_loc {
                 if s_last_loc <= sm_last_loc {
-                    new_seeds.push(vec![dm_start_loc, s_dist]);
+                    changed_seeds.push(vec![dm_start_loc, s_dist]);
                     changed += 1;
+                    println!("3");
+                    break
                 } else {
-                    new_seeds.push(vec![dm_start_loc, m_dist]);
-                    new_seeds.push(vec![sm_last_loc + 1, s_dist - m_dist]);
+                    changed_seeds.push(vec![dm_start_loc, m_dist]);
+                    unchecked_seeds.push(vec![sm_last_loc + 1, s_dist - m_dist]);
                     changed += 1;
+                    println!("4");
+                    break
                 }
             } else if s_start_loc < sm_start_loc {
-                new_seeds.push(vec![s_start_loc, sm_start_loc - s_start_loc]);
+                unchecked_seeds.push(vec![s_start_loc, sm_start_loc - s_start_loc]);
                 if s_last_loc <= sm_last_loc {
-                    new_seeds.push(vec![dm_start_loc, s_last_loc - sm_start_loc + 1]);
+                    changed_seeds.push(vec![dm_start_loc, s_last_loc - sm_start_loc + 1]);
                     changed += 1;
+                    println!("5");
+                    break
                 } else {
-                    new_seeds.push(vec![dm_start_loc, m_dist]);
-                    new_seeds.push(vec![sm_last_loc + 1, s_last_loc - sm_last_loc]);
+                    changed_seeds.push(vec![dm_start_loc, m_dist]);
+                    unchecked_seeds.push(vec![sm_last_loc + 1, s_last_loc - sm_last_loc]);
                     changed += 1;
+                    println!("6");
+                    break
                 }
             } else if sm_start_loc < s_start_loc {
                 if s_last_loc <= sm_last_loc {
-                    new_seeds.push(vec![dm_start_loc + s_start_loc - sm_start_loc, s_dist]);
+                    changed_seeds.push(vec![dm_start_loc + s_start_loc - sm_start_loc, s_dist]);
                     changed += 1;
+                    println!("7");
+                    break
                 } else {
-                    new_seeds.push(vec![
+                    changed_seeds.push(vec![
                         dm_start_loc + s_start_loc - sm_start_loc,
                         sm_last_loc - s_start_loc + 1,
                     ]);
-                    new_seeds.push(vec![sm_last_loc, s_last_loc - sm_last_loc]);
+                    unchecked_seeds.push(vec![sm_last_loc + 1, s_last_loc - sm_last_loc]);
                     changed += 1;
+                    println!("8");
+                    break
                 }
             } else {
                 panic!("WHAT THE FUCK HAOPPOPPEND");
             }
+
         }
-        let next_generation = match changed {
-            0 => vec![seeds.clone()],
-            1 => new_seeds,
-            _ => panic!("Too many changes!!"),
-        };
-        new_seed_descriptions.extend(next_generation);
+        if changed == 0 { checked_seeds.push(seeds) };
+        unchecked_seeds.remove(0);
     }
     println!("old : {:?}", seed_descriptions);
+    new_seed_descriptions.extend(checked_seeds);
+    new_seed_descriptions.extend(changed_seeds);
     println!("new: {:?}", new_seed_descriptions);
     assert_eq!(
         seed_descriptions.iter().map(|v| v[1] as i64).sum::<i64>(),
