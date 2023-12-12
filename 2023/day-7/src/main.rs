@@ -30,7 +30,7 @@ fn to_value(c: char) -> i64 {
         '8' => 8,
         '9' => 9,
         'T' => 10,
-        'J' => 11,
+        'J' => 1,
         'Q' => 12,
         'K' => 13,
         'A' => 14,
@@ -81,6 +81,7 @@ impl Hand {
         for c in hand.chars() {
             *counts.entry(to_value(c)).or_insert(0) += 1;
         }
+        let mut joker_count = *counts.entry(to_value('J')).or_default();
         let mut counter_vec: Vec<(i64, i64)> = counts.into_iter().collect::<Vec<_>>();
         counter_vec.sort_by(|&(v1, c1), &(v2, c2)| {
             return match c2.cmp(&c1) {
@@ -88,6 +89,20 @@ impl Hand {
                 other => other,
             };
         }); // highest first
+        let (mut value, mut count) = counter_vec[0];
+        if value == to_value('J') {
+            if counter_vec.len() == 1 {
+                // "JJJJJ" => kind: 5
+                joker_count = 0;
+            } else {
+                // sufficient to mask the jokers to the most common card
+                // this always results in the best hand
+                counter_vec.remove(0);
+                (value, count) = counter_vec[0];
+            }
+        };
+        counter_vec[0] = (value, count + joker_count);
+
         let values = hand.chars().map(to_value).collect::<Vec<_>>();
 
         match counter_vec.as_slice() {
@@ -129,7 +144,7 @@ fn main() -> Result<()> {
 
     players.sort_by(|a, b| a.hand.cmp(&b.hand)); // note reverse order
 
-    p1 = players
+    p2 = players
         .iter()
         .enumerate()
         .map(|(rank, player)| player.bet * (rank + 1) as i64)
