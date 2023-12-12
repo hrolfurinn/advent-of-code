@@ -43,6 +43,7 @@ fn to_value(c: char) -> i64 {
 struct Player {
     hand: Hand,
     bet: i64,
+    cards: String,
 }
 
 impl Player {
@@ -61,6 +62,7 @@ impl Player {
                     panic!("{e:?}")
                 }
             },
+            cards: cards.to_string(),
         }
     }
 }
@@ -89,35 +91,36 @@ impl Hand {
                 x => x,
             };
         }); // highest first
+        let values = hand.chars().map(|c| to_value(c)).collect::<Vec<_>>();
 
         return match (counter_vec[0], counter_vec[1]) {
             ((v, 5), (_, _)) => Self {
                 kind: 7,
-                values: Vec::from([v]),
+                values
             },
             ((v, 4), (_, _)) => Self {
                 kind: 6,
-                values: Vec::from([v]),
+                values
             },
             ((v1, 3), (v2, 2)) => Self {
                 kind: 5,
-                values: Vec::from([v1, v2]),
+                values
             },
             ((v, 3), (_, _)) => Self {
                 kind: 4,
-                values: Vec::from([v]),
+                values
             },
             ((v1, 2), (v2, 2)) => Self {
                 kind: 3,
-                values: Vec::from([v1, v2]),
+                values
             },
             ((v, 2), (_, _)) => Self {
                 kind: 2,
-                values: Vec::from([v]),
+                values
             },
             ((v, 1), (_, _)) => Self {
                 kind: 1,
-                values: Vec::from([v]),
+                values
             },
             _ => panic!("Couldn't process hand {hand:?}"),
         };
@@ -153,7 +156,16 @@ fn main() -> Result<()> {
         players.push(player);
     }
 
-    players.sort_by(|a, b| b.hand.cmp(&a.hand)); // note reverse order
+    players.sort_by(|a, b| a.hand.cmp(&b.hand)); // note reverse order
+
+    for (rank, player) in players.iter().enumerate() {
+        println!("{}", "-".to_string().repeat(20));
+        println!("player rank {:?}", rank);
+        println!("player bet {:?}", player.bet);
+        println!("player kind {:?}", player.hand.kind);
+        println!("player card values {:?}", player.hand.values);
+        println!("player cards {:?}", player.cards);
+    }
 
     p1 = players
         .iter()
