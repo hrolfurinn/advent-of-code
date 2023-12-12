@@ -27,12 +27,13 @@ fn split_seeds<'a>(seed_descriptions: &Vec<Vec<i64>>, mappings: &Vec<Vec<i64>>) 
     let mut changed_seeds: Vec<Vec<i64>> = vec![];
     while !unchecked_seeds.is_empty() {
         let seeds = unchecked_seeds[0].clone();
+
+        let s_start_loc = seeds[0];
+        let s_last_loc = seeds[0] + seeds[1] - 1;
+        let s_dist = seeds[1];
+
         let mut changed = false;
         for mapping in mappings {
-            let s_start_loc = seeds[0];
-            let s_last_loc = seeds[0] + seeds[1] - 1;
-            let s_dist = seeds[1];
-
             let dm_start_loc = mapping[0];
 
             let sm_start_loc = mapping[1];
