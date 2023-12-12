@@ -18,7 +18,7 @@ fn load_input(test: bool) -> String {
     }
 }
 
-fn to_value(c: char) -> i32 {
+fn to_value(c: char) -> i64 {
     match c {
         '2' => 2,
         '3' => 3,
@@ -39,9 +39,10 @@ fn to_value(c: char) -> i32 {
     }
 }
 
+#[derive(Clone, Debug)]
 struct Player {
     hand: Hand,
-    bet: i32,
+    bet: i64,
 }
 
 impl Player {
@@ -54,7 +55,7 @@ impl Player {
             .unwrap();
         Self {
             hand: Hand::from(cards),
-            bet: match amount.parse::<i32>() {
+            bet: match amount.parse::<i64>() {
                 Ok(n) => n,
                 Err(e) => {
                     panic!("{e:?}")
@@ -64,9 +65,10 @@ impl Player {
     }
 }
 
+#[derive(Clone, Debug)]
 struct Hand {
-    kind: i32,
-    values: Vec<i32>,
+    kind: i64,
+    values: Vec<i64>,
 }
 
 impl Hand {
@@ -76,10 +78,10 @@ impl Hand {
                 hand.chars()
                     .filter(|c| to_value(*c) == v)
                     .collect::<Vec<_>>()
-                    .len() as i32
+                    .len() as i64
             })
             .enumerate()
-            .map(|(value, count)| (value as i32, count))
+            .map(|(value, count)| (value as i64, count))
             .collect::<Vec<_>>();
         counter_vec.sort_by(|(v1, c1), (v2, c2)| {
             return match c2.cmp(c1) {
@@ -120,11 +122,17 @@ impl Hand {
             _ => panic!("Couldn't process hand {hand:?}"),
         };
     }
+    pub fn cmp(&self, other: &Hand) -> Ordering {
+        return match self.kind.cmp(&other.kind) {
+            Ordering::Equal => self.values.cmp(&other.values),
+            ord => ord,
+        };
+    }
 }
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
 
@@ -133,7 +141,7 @@ fn main() -> Result<()> {
 
     let mut lines = input.lines();
 
-    let mut hands: Vec<Hand> = vec![];
+    let mut players: Vec<Player> = vec![];
 
     for line in lines {
         println!("{}", "-".to_string().repeat(20));
@@ -142,7 +150,16 @@ fn main() -> Result<()> {
         println!("kind: {:?}", player.hand.kind);
         println!("values: {:?}", player.hand.values);
         println!("bet: {:?}", player.bet);
+        players.push(player);
     }
+
+    players.sort_by(|a, b| b.hand.cmp(&a.hand)); // note reverse order
+
+    p1 = players
+        .iter()
+        .enumerate()
+        .map(|(rank, player)| player.bet * (rank + 1) as i64)
+        .sum();
 
     println!("p1: {}", p1);
     println!("p2: {}", p2);
