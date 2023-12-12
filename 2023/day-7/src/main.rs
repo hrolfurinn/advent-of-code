@@ -1,4 +1,5 @@
 use std::cmp::Ordering;
+use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::io::Result;
@@ -75,55 +76,30 @@ struct Hand {
 
 impl Hand {
     pub fn from(hand: &str) -> Self {
-        let mut counter_vec = (0..=14)
-            .map(|v| {
-                hand.chars()
-                    .filter(|c| to_value(*c) == v)
-                    .collect::<Vec<_>>()
-                    .len() as i64
-            })
-            .enumerate()
-            .map(|(value, count)| (value as i64, count))
-            .collect::<Vec<_>>();
-        counter_vec.sort_by(|(v1, c1), (v2, c2)| {
-            return match c2.cmp(c1) {
-                Ordering::Equal => v2.cmp(v1),
-                x => x,
+        let mut counts = HashMap::new();
+
+        for c in hand.chars() {
+            *counts.entry(to_value(c)).or_insert(0) += 1;
+        }
+        let mut counter_vec: Vec<(i64, i64)> = counts.into_iter().collect::<Vec<_>>();
+        counter_vec.sort_by(|&(v1, c1), &(v2, c2)| {
+            return match c2.cmp(&c1) {
+                Ordering::Equal => v2.cmp(&v1),
+                other => other,
             };
         }); // highest first
-        let values = hand.chars().map(|c| to_value(c)).collect::<Vec<_>>();
+        let values = hand.chars().map(to_value).collect::<Vec<_>>();
 
-        return match (counter_vec[0], counter_vec[1]) {
-            ((v, 5), (_, _)) => Self {
-                kind: 7,
-                values
-            },
-            ((v, 4), (_, _)) => Self {
-                kind: 6,
-                values
-            },
-            ((v1, 3), (v2, 2)) => Self {
-                kind: 5,
-                values
-            },
-            ((v, 3), (_, _)) => Self {
-                kind: 4,
-                values
-            },
-            ((v1, 2), (v2, 2)) => Self {
-                kind: 3,
-                values
-            },
-            ((v, 2), (_, _)) => Self {
-                kind: 2,
-                values
-            },
-            ((v, 1), (_, _)) => Self {
-                kind: 1,
-                values
-            },
+        match counter_vec.as_slice() {
+            &[(_, 5), ..] => Self { kind: 7, values },
+            &[(_, 4), ..] => Self { kind: 6, values },
+            &[(_, 3), (_, 2), ..] => Self { kind: 5, values },
+            &[(_, 3), ..] => Self { kind: 4, values },
+            &[(_, 2), (_, 2), ..] => Self { kind: 3, values },
+            &[(_, 2), ..] => Self { kind: 2, values },
+            &[(_, 1), ..] => Self { kind: 1, values },
             _ => panic!("Couldn't process hand {hand:?}"),
-        };
+        }
     }
     pub fn cmp(&self, other: &Hand) -> Ordering {
         return match self.kind.cmp(&other.kind) {
