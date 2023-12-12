@@ -147,25 +147,11 @@ fn main() -> Result<()> {
     let mut players: Vec<Player> = vec![];
 
     for line in lines {
-        println!("{}", "-".to_string().repeat(20));
-        println!("{line:?}");
         let player = Player::from(line);
-        println!("kind: {:?}", player.hand.kind);
-        println!("values: {:?}", player.hand.values);
-        println!("bet: {:?}", player.bet);
         players.push(player);
     }
 
     players.sort_by(|a, b| a.hand.cmp(&b.hand)); // note reverse order
-
-    for (rank, player) in players.iter().enumerate() {
-        println!("{}", "-".to_string().repeat(20));
-        println!("player rank {:?}", rank);
-        println!("player bet {:?}", player.bet);
-        println!("player kind {:?}", player.hand.kind);
-        println!("player card values {:?}", player.hand.values);
-        println!("player cards {:?}", player.cards);
-    }
 
     p1 = players
         .iter()
