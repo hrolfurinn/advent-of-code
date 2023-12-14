@@ -51,16 +51,9 @@ impl Graph {
     pub fn from(mut lines: Lines) -> (Self, Vec<String>) {
         let mut nodes: HashMap<String, Node> = HashMap::new();
         let mut starting_keys: Vec<String> = Vec::new();
-        fn parse(line: &str) -> Vec<&str> {
-            return line
-                .split(|c: char| !c.is_alphabetic())
-                .filter(|w| w.is_empty())
-                .take(3)
-                .collect::<Vec<_>>();
-        }
         let new_nodes = lines.filter(|line| !line.is_empty()).map(|line| {
             match line
-                .split(|c: char| !c.is_alphabetic())
+                .split(|c: char| !c.is_alphanumeric())
                 .filter(|w| !w.is_empty())
                 .take(3)
                 .collect::<Vec<_>>()
@@ -136,7 +129,7 @@ fn load_input(test: bool) -> String {
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
 
@@ -146,31 +139,46 @@ fn main() -> Result<()> {
 
     let instructions = Instructions::from(lines.next().unwrap());
 
-    let list_len = instructions.list.len();
-    let mut ix = 0;
+    let list_len = instructions.list.len() as i32;
+    let mut ix = 0 as i32;
 
     let (map, mut current_nodes) = Graph::from(lines.clone());
+    let mut last_zs: Vec<Option<i32>> = Vec::from([None].repeat(list_len as usize));
 
-    let mut p2 = 0;
-    println!("nodes: {:?}", current_nodes);
+    let mut cycles: Vec<Option<i32>> = Vec::new();
 
-    while let direction = instructions.list[ix] {
+    let mut count = 0;
+
+    while let direction = instructions.list[ix as usize] {
         let mut new_nodes: Vec<String> = Vec::new();
-        for node_key in current_nodes.iter() {
+        for (branch_index, node_key) in current_nodes.iter().enumerate() {
             let node = map.get(node_key);
             let next_node = node.get_child(direction);
+            if next_node.ends_with("Z") {
+                match last_zs[branch_index] {
+                    Some(last_z) => {
+                        if (count - last_z) % list_len == 0 {
+                            let cycle_length = (count - last_z) / list_len;
+                            let first_z = count % (cycle_length * list_len); 
+                            println!("Branch: {:?} Count: {:?} Cycles = {:?}, Index = {:?}, First z = {:?}", branch_index, count, cycle_length, ix, first_z);
+                        }
+                    }
+                    None => {}
+                };
+                last_zs[branch_index] = Some(count)
+            }
             new_nodes.push(next_node);
         }
-        p2 += 1;
+        count += 1;
         ix = (ix + 1) % list_len;
         if new_nodes.iter().all(|key| key.ends_with("Z")) {
+            println!("nodes: {:?}", current_nodes);
             break;
         }
         current_nodes = new_nodes;
-        println!("nodes: {:?}", current_nodes);
     }
 
-    println!("p2: {}", p2);
+    println!("p2: {}", count);
 
     Ok(())
 }
