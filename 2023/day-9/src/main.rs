@@ -17,7 +17,7 @@ fn load_input(test: bool) -> String {
     }
 }
 
-fn get_numbers(string: String) -> Vec<i64> {
+fn get_numbers(string: &str) -> Vec<i64> {
     string
         .split(|c: char| !c.is_numeric() && !c.eq(&'-'))
         .filter_map(|s| match s.parse::<i64>() {
@@ -39,16 +39,13 @@ fn main() -> Result<()> {
     let mut p1: i64 = 0;
     let mut p2: i64 = 0;
 
-    let lines = input.lines();
-
-    for line in lines {
-        let mut numbers = get_numbers(line.to_string());
-        let mut depth = 0;
+    for mut numbers in input.lines().map(get_numbers) {
+        let mut depth_sign = 1;
         p1 += numbers[numbers.len() - 1];
         p2 += numbers[0];
 
         while numbers.iter().any(|n| !n.eq(&0)) {
-            depth += 1;
+            depth_sign *= -1;
             numbers = numbers
                 .windows(2)
                 .map(|window| match window {
@@ -59,7 +56,7 @@ fn main() -> Result<()> {
             // adding the last numbers of the layers yields the next number in the seq
             p1 += numbers[numbers.len() - 1];
             // add alternating signs of the first number in each layer yields the previous number
-            p2 += numbers[0] * ((-1_i64).pow(depth));
+            p2 += numbers[0] * depth_sign;
         }
     }
 
