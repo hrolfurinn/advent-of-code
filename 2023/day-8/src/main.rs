@@ -4,6 +4,7 @@ use std::env;
 use std::fs::read_to_string;
 use std::io::Result;
 use std::str::Lines;
+use num_integer::Integer;
 
 #[derive(Debug, Clone, Copy)]
 enum Direction {
@@ -140,13 +141,15 @@ fn main() -> Result<()> {
     let instructions = Instructions::from(lines.next().unwrap());
 
     let list_len = instructions.list.len() as i32;
-    let mut ix = 0 as i32;
-
+    
     let (map, mut current_nodes) = Graph::from(lines.clone());
-    let mut last_zs: Vec<Option<i32>> = Vec::from([None].repeat(list_len as usize));
-
-    let mut cycles: Vec<Option<i32>> = Vec::new();
-
+    let branch_count = current_nodes.len();
+    
+    let mut last_zs: Vec<Option<i32>> = Vec::from([None].repeat(branch_count));
+    let mut cycles: Vec<Option<i64>> = Vec::from([None].repeat(branch_count));
+    let mut first_zs: Vec<Option<i32>> = Vec::from([None].repeat(branch_count));
+    
+    let mut ix = 0 as i32;
     let mut count = 0;
 
     while let direction = instructions.list[ix as usize] {
@@ -155,12 +158,18 @@ fn main() -> Result<()> {
             let node = map.get(node_key);
             let next_node = node.get_child(direction);
             if next_node.ends_with("Z") {
+                // println!("Branch {branch_index}");
+                // println!("Count: {count}");
                 match last_zs[branch_index] {
                     Some(last_z) => {
-                        if (count - last_z) % list_len == 0 {
-                            let cycle_length = (count - last_z) / list_len;
-                            let first_z = count % (cycle_length * list_len); 
-                            println!("Branch: {:?} Count: {:?} Cycles = {:?}, Index = {:?}, First z = {:?}", branch_index, count, cycle_length, ix, first_z);
+                        let cycle_length = (count - last_z) / list_len;
+                        let first_z = ((count - (ix + 1)) % (cycle_length * list_len)) / list_len; 
+                        // println!("Branch: {:?} Count: {:?} Cycles = {:?}, Index = {:?}, First z = {:?}, list_len = {:?}", branch_index, count, cycle_length, ix, first_z, list_len);
+                        cycles[branch_index] = Some((count - last_z) as i64);
+                        if count - last_z == 0 {
+                            if first_zs[branch_index].is_none() {
+                                first_zs[branch_index] = Some(last_z);
+                            }
                         }
                     }
                     None => {}
@@ -171,14 +180,26 @@ fn main() -> Result<()> {
         }
         count += 1;
         ix = (ix + 1) % list_len;
-        if new_nodes.iter().all(|key| key.ends_with("Z")) {
-            println!("nodes: {:?}", current_nodes);
+        if cycles.iter().all(|cycle| cycle.is_some()) {
+            println!("nodes: {:?}", new_nodes);
             break;
+        } else if new_nodes.iter().any(|n| n.ends_with("Z")){
+            println!("{:?}", new_nodes);
+            println!("{:?}", cycles);
         }
+
         current_nodes = new_nodes;
     }
+    println!("cycles {:?}", cycles);
+    println!("first_zs {:?}", first_zs);
+    println!("last_zs {:?}", last_zs);
+    let mut p2: i64 = 1;
+    let mut cycles = cycles.iter();
+    while let Some(Some(number)) = cycles.next() {
+        p2 = p2.lcm(number);
+    }
 
-    println!("p2: {}", count);
+    println!("p2: {}", p2);
 
     Ok(())
 }
