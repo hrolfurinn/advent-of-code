@@ -43,10 +43,12 @@ fn main() -> Result<()> {
 
     for line in lines {
         let mut numbers = get_numbers(line.to_string());
-        let mut last_numbers = vec![numbers[numbers.len() - 1]];
-        let mut first_numbers = vec![numbers[0]];
+        let mut depth = 0;
+        p1 += numbers[numbers.len() - 1];
+        p2 += numbers[0];
 
         while numbers.iter().any(|n| !n.eq(&0)) {
+            depth += 1;
             numbers = numbers
                 .windows(2)
                 .map(|window| match window {
@@ -54,21 +56,11 @@ fn main() -> Result<()> {
                     _ => unreachable!("Window size not two"),
                 })
                 .collect::<Vec<_>>();
-            last_numbers.push(numbers[numbers.len() - 1]);
-            first_numbers.push(numbers[0]);
+            // adding the last numbers of the layers yields the next number in the seq
+            p1 += numbers[numbers.len() - 1];
+            // add alternating signs of the first number in each layer yields the previous number
+            p2 += numbers[0] * ((-1_i64).pow(depth));
         }
-
-        // sum the last number in each layer to get the next number
-        let next: i64 = last_numbers.iter().sum();
-        p1 += next;
-
-        // sum alternating sign first numbers in each layer to get the previous number
-        let prev: i64 = first_numbers
-            .iter()
-            .enumerate()
-            .map(|(index, value)| if index % 2 == 0 { *value } else { -*value })
-            .sum();
-        p2 += prev;
     }
 
     println!("p1: {}", p1);
