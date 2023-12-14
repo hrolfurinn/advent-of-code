@@ -160,7 +160,7 @@ impl PipeMap {
         valid_directions
     }
 
-    pub fn traverse(&mut self, initial_direction: char) -> Option<usize> {
+    pub fn traverse(&mut self, initial_direction: char) -> Option<(i64,i64)> {
         println!("Traversing...");
         println!("Starting at {:?}", self.start);
         println!("First direction {:?}", initial_direction);
@@ -195,46 +195,123 @@ impl PipeMap {
                 line.iter().map(|c| c.to_string()).collect::<String>()
             );
         }
-        let count = pipe_loop.count();
-        println!("inner: {:?}", count);
-        Some(loop_length / 2 + loop_length % 2)
+        pipe_loop.process()
     }
 }
 
 struct PipeLoop {
     map: Vec<Vec<char>>,
+    count: i64,
 }
 
 impl PipeLoop {
     pub fn from(map: &Vec<Vec<char>>) -> Self {
         Self {
             map: vec![vec!['.'; map[0].len()]; map.len()],
+            count: 0,
         }
     }
 
     pub fn add(&mut self, (row, column): (usize, usize), c: char) {
         self.map[row][column] = c;
+        self.count += 1;
     }
 
-    pub fn count(&self) -> i32 {
+    pub fn s_corner(&self, corner: char) -> char {
+        // corner that makes the loop take an 'S' turn, like F and J below
+        // ...|.
+        // .F-J.
+        // .|...
+        // Can only be former symbol, since line is read left to right
+        match corner {
+            'F' => 'J',
+            'L' => '7',
+            _ => unreachable!("Invalid corner char {:?}", corner),
+        }
+    }
+    pub fn u_corner(&self, corner: char) -> char {
+        // corner that makes the loop take an 'S' turn, like F and 7 below
+        // .....
+        // .F-7.
+        // .|.|.
+        // Can only be former symbol, since line is read left to right
+        match corner {
+            'F' => '7',
+            'L' => 'J',
+            _ => unreachable!("Invalid corner char {:?}", corner),
+        }
+    }
+
+    pub fn process(&self) -> Option<(i64,i64)> {
         let mut inner = 0;
-        for line in self.map.iter() {
+        for (row_index, line) in self.map.iter().enumerate() {
+            let mut prev_corner = '\0';
             let mut inside = false;
-            for value in line {
-                if value == &'|' {
-                    inside = !inside
-                } else if value == &'.' {
-                    inner += 1
+            for (column_index, value) in line.iter().enumerate() {
+                match value {
+                    '|' => {
+                        inside = !inside;
+                        println!(
+                            "Swtiched at {:?}: {:?}, {:?}",
+                            value, row_index, column_index
+                        );
+                    }
+                    '7' | 'J' => {
+                        if prev_corner == '\0' {
+                            unreachable!("Previous corner was null")
+                        }
+                        let s_corner = self.s_corner(prev_corner);
+                        let u_corner = self.u_corner(prev_corner);
+                        match value {
+                            v if v == &s_corner => {
+                                inside = !inside;
+                                println!(
+                                    "Switched at {:?}: {:?}, {:?}",
+                                    value, row_index, column_index
+                                );
+                            }
+                            v if v == &u_corner => prev_corner = '\0',
+                            _ => unreachable!(
+                                "Invalid corner combo for value {:?} and prev {:?}",
+                                value, prev_corner
+                            ),
+                        }
+                        prev_corner = '\0'
+                    }
+                    'F' | 'L' => {
+                        if prev_corner != '\0' {
+                            unreachable!(
+                                "Previous corner was not null at {:?}: {:?}, {:?}",
+                                value, row_index, column_index
+                            )
+                        }
+                        prev_corner = *value
+                    }
+                    '-' => {
+                        if prev_corner == '\0' {
+                            unreachable!(
+                                "I should not be allowed here at {:?}: {:?}, {:?}",
+                                value, row_index, column_index
+                            )
+                        }
+                    }
+                    '.' => {
+                        if inside {
+                            inner += 1;
+                            println!("inner at {:?}: {:?}, {:?}", value, row_index, column_index);
+                        }
+                    }
+                    _ => unreachable!("Invalid character in loop counting"),
                 }
             }
         }
-        inner
+        Some((inner,(self.count / 2) + self.count%2 as i64))
     }
 }
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
     let mut p1: i64 = 0;
@@ -248,7 +325,7 @@ fn main() -> Result<()> {
     let valid_directions = map.get_valid_directions();
     for direction in valid_directions {
         if let Some(ans) = map.traverse(direction) {
-            p1 = ans as i64;
+            (p2,p1) = ans;
             break;
         }
     }
