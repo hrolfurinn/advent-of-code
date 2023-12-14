@@ -1,9 +1,6 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::io::Result;
-use std::str::Lines;
 
 fn load_input(test: bool) -> String {
     let path = if test {
@@ -42,43 +39,36 @@ fn main() -> Result<()> {
     let mut p1: i64 = 0;
     let mut p2: i64 = 0;
 
-    let mut lines = input.lines();
+    let lines = input.lines();
 
-    while let Some(line) = lines.next() {
+    for line in lines {
         let mut numbers = get_numbers(line.to_string());
-        let mut levels = 0;
         let mut last_numbers = vec![numbers[numbers.len() - 1]];
         let mut first_numbers = vec![numbers[0]];
+
         while numbers.iter().any(|n| !n.eq(&0)) {
-            levels += 1;
-            let mut new_numbers = numbers
+            numbers = numbers
                 .windows(2)
                 .map(|window| match window {
                     [a, b] => b - a,
                     _ => unreachable!("Window size not two"),
                 })
                 .collect::<Vec<_>>();
-            if new_numbers.iter().all(|n| n.eq(&0)) {
-                last_numbers.push(new_numbers[new_numbers.len() - 1]);
-                first_numbers.push(new_numbers[0]);
-                break
-            } else {
-                last_numbers.push(new_numbers[new_numbers.len() - 1]);
-                first_numbers.push(new_numbers[0]);
-                numbers = new_numbers;
-            }
+            last_numbers.push(numbers[numbers.len() - 1]);
+            first_numbers.push(numbers[0]);
         }
-        println!("{:?}", line);
-        println!("{:?}", numbers);
-        println!("{:?}", levels);
+
+        // sum the last number in each layer to get the next number
         let next: i64 = last_numbers.iter().sum();
         p1 += next;
-        println!("{:?}", next);
-        let prev: i64 = first_numbers.iter().enumerate().map(
-            |(index,value)| (-1 as i64).pow(index as u32 % 2) * value
-        ).sum();
+
+        // sum alternating sign first numbers in each layer to get the previous number
+        let prev: i64 = first_numbers
+            .iter()
+            .enumerate()
+            .map(|(index, value)| if index % 2 == 0 { *value } else { -*value })
+            .sum();
         p2 += prev;
-        println!("{:?}", prev);
     }
 
     println!("p1: {}", p1);
