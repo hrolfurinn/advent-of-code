@@ -60,6 +60,7 @@ impl PipeMap {
     }
 
     pub fn go(&mut self, direction: char) {
+        println!("Trying to go {:?} from location {:?}", direction, self.location);
         let (mut row, mut column) = self.location;
         match direction {
             'n' => row -= 1,
@@ -69,30 +70,65 @@ impl PipeMap {
             _ => unreachable!("Unrecognized direction."),
         };
         self.location = (row,column);
+        println!("Ended up at location {:?}", self.location);
     }
-}
 
-fn to_direction(c: &char) -> (char, char) {
-    match c {
-        '|' => ('n', 's'),
-        '-' => ('e', 'w'),
-        'L' => ('n', 'e'),
-        'J' => ('n', 'w'),
-        '7' => ('s', 'w'),
-        'F' => ('s', 'e'),
-        '.' => ('.', '.'),
-        'S' => ('S', 'S'),
-        _ => unreachable!("Found invalid character"),
+    pub fn get_pipe(&self) -> char {
+        let (current_row, current_column) = self.location;
+        self.map[current_row][current_column]
     }
-}
 
-fn opposite_direction(c: &char) -> char {
-    match c {
-        'n' => 's',
-        'e' => 'w',
-        'w' => 'e',
-        's' => 'n',
-        _ => unreachable!("Unrecognized direction."),
+    pub fn to_direction(&self, pipe: &char) -> (char, char) {
+        match pipe {
+            '|' => ('n', 's'),
+            '-' => ('e', 'w'),
+            'L' => ('n', 'e'),
+            'J' => ('n', 'w'),
+            '7' => ('s', 'w'),
+            'F' => ('s', 'e'),
+            '.' => ('.', '.'),
+            'S' => ('S', 'S'),
+            _ => unreachable!("Found invalid character"),
+        }
+    }
+    
+    pub fn opposite_direction(&self, direction: &char) -> char {
+        match direction {
+            'n' => 's',
+            'e' => 'w',
+            'w' => 'e',
+            's' => 'n',
+            _ => unreachable!("Unrecognized direction."),
+        }
+    }    
+
+    pub fn get_next(&self, pipe: &char, previous_direction: &char) -> char {
+        let paths = self.to_direction(pipe);
+        let entry = self.opposite_direction(previous_direction);
+        if paths.0 == entry {
+            paths.1
+        } else {
+            paths.0
+        }
+    }
+
+    pub fn traverse(&mut self, initial_direction: char) -> Option<(usize, usize)>{
+        println!("Traversing...");
+        println!("Starting at {:?}", self.start);
+        println!("First direction {:?}", initial_direction);
+        self.go(initial_direction);
+        let mut previous_direction = initial_direction;
+        let mut next_direction = self.get_next(&self.get_pipe(), &previous_direction);
+        let mut loop_length = 0;
+        while !self.location.eq(&self.start) {
+            let current_direction = next_direction;
+            self.go(current_direction);
+            previous_direction = current_direction;
+            next_direction = self.get_next(&self.get_pipe(), &current_direction);
+            loop_length += 1;
+        }
+        println!("{:?}", loop_length);
+        None
     }
 }
 
@@ -104,13 +140,14 @@ fn main() -> Result<()> {
 
     let mut map = PipeMap::from(input);
     println!("Start: {:?}", map.start);
-    map.go('s');
-    println!("Current: {:?}", map.location);
 
     let directions = ['n', 'e', 's', 'w'];
     let path: Vec<(usize, usize)> = Vec::new();
 
-    for direction in directions {}
+    let first_direction = 'e';
+    let _ = map.traverse(first_direction);
+
+    // for direction in directions {}
 
     let mut p1: i64 = 0;
     let mut p2: i64 = 0;
