@@ -1,9 +1,6 @@
-use std::cmp::Ordering;
-use std::collections::HashMap;
 use std::env;
 use std::fs::read_to_string;
 use std::io::Result;
-use std::str::Lines;
 
 fn load_input(test: bool) -> String {
     let path = if test {
@@ -53,14 +50,17 @@ impl PipeMap {
             .unwrap();
         println!("Start coords: {:?} and {:?}", start_row, start_column);
         Self {
-            map: map,
+            map,
             start: (start_row, start_column),
             location: (start_row, start_column),
         }
     }
 
     pub fn go(&mut self, direction: char) {
-        println!("Trying to go {:?} from location {:?}", direction, self.location);
+        // println!(
+        //     "Trying to go {:?} from location {:?}",
+        //     direction, self.location
+        // );
         let (mut row, mut column) = self.location;
         match direction {
             'n' => row -= 1,
@@ -69,8 +69,8 @@ impl PipeMap {
             's' => row += 1,
             _ => unreachable!("Unrecognized direction."),
         };
-        self.location = (row,column);
-        println!("Ended up at location {:?}", self.location);
+        self.location = (row, column);
+        // println!("Ended up at location {:?}", self.location);
     }
 
     pub fn get_pipe(&self) -> char {
@@ -91,7 +91,7 @@ impl PipeMap {
             _ => unreachable!("Found invalid character"),
         }
     }
-    
+
     pub fn opposite_direction(&self, direction: &char) -> char {
         match direction {
             'n' => 's',
@@ -100,10 +100,10 @@ impl PipeMap {
             's' => 'n',
             _ => unreachable!("Unrecognized direction."),
         }
-    }    
+    }
 
-    pub fn get_next(&self, pipe: &char, previous_direction: &char) -> char {
-        let paths = self.to_direction(pipe);
+    pub fn get_next(&self, previous_direction: &char) -> char {
+        let paths = self.to_direction(&self.get_pipe());
         let entry = self.opposite_direction(previous_direction);
         if paths.0 == entry {
             paths.1
@@ -112,45 +112,91 @@ impl PipeMap {
         }
     }
 
-    pub fn traverse(&mut self, initial_direction: char) -> Option<(usize, usize)>{
+    pub fn get_valid_directions(&mut self) -> Vec<char> {
+        let mut directions = Vec::new();
+        let (row, column) = self.start;
+        if row != 0 {
+            directions.push('n');
+        }
+        if row != self.map.len() {
+            directions.push('s');
+        }
+        if column != 0 {
+            directions.push('w');
+        }
+        if column != self.map[0].len() {
+            directions.push('e');
+        }
+        let mut valid_directions = Vec::new();
+        for direction in directions {
+            println!("Is {:?} a valid direction?", direction);
+            self.go(direction);
+            if self.get_pipe() == '.' {
+                self.location = self.start;
+                continue;
+            }
+            if self.to_direction(&self.get_pipe()).0 == self.opposite_direction(&direction)
+                || self.to_direction(&self.get_pipe()).1 == self.opposite_direction(&direction)
+            {
+                println!("Success");
+                valid_directions.push(direction);
+            }
+            self.location = self.start;
+        }
+        if valid_directions.len() != 2 {
+            panic!("Failed valid directions");
+        }
+        valid_directions
+    }
+
+    pub fn empty_map(&self) -> Vec<Vec<char>> {
+        vec![vec!['.';self.map[0].len()];self.map.len()]
+    }
+
+    pub fn traverse(&mut self, initial_direction: char) -> Option<usize> {
         println!("Traversing...");
         println!("Starting at {:?}", self.start);
         println!("First direction {:?}", initial_direction);
+        let mut loop_outline = self.empty_map();
         self.go(initial_direction);
         let mut previous_direction = initial_direction;
-        let mut next_direction = self.get_next(&self.get_pipe(), &previous_direction);
+        let mut next_direction = self.get_next(&previous_direction);
         let mut loop_length = 0;
         while !self.location.eq(&self.start) {
             let current_direction = next_direction;
             self.go(current_direction);
+            if self.get_pipe().eq(&'.') {
+                return None;
+            }
+            next_direction = self.get_next( &current_direction);
             previous_direction = current_direction;
-            next_direction = self.get_next(&self.get_pipe(), &current_direction);
             loop_length += 1;
         }
         println!("{:?}", loop_length);
-        None
+        Some(loop_length / 2 + loop_length%2)
     }
 }
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
+    let mut p1: i64 = 0;
+    let mut p2: i64 = 0;
 
     let mut map = PipeMap::from(input);
     println!("Start: {:?}", map.start);
 
-    let directions = ['n', 'e', 's', 'w'];
     let path: Vec<(usize, usize)> = Vec::new();
 
-    let first_direction = 'e';
-    let _ = map.traverse(first_direction);
-
-    // for direction in directions {}
-
-    let mut p1: i64 = 0;
-    let mut p2: i64 = 0;
+    let valid_directions = map.get_valid_directions();
+    for direction in valid_directions {
+        if let Some(ans) = map.traverse(direction) {
+            p1 = ans as i64;
+            break;
+        }
+    }
 
     println!("p1: {}", p1);
     println!("p2: {}", p2);
