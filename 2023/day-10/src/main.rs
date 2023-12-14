@@ -35,7 +35,6 @@ impl PipeMap {
             .enumerate()
             .find_map(|(row_index, row)| {
                 if row.contains(&'S') {
-                    println!("Found S in {:?}", row.iter().collect::<String>());
                     Some((
                         row_index,
                         row.iter()
@@ -48,7 +47,6 @@ impl PipeMap {
                 }
             })
             .unwrap();
-        println!("Start coords: {:?} and {:?}", start_row, start_column);
         Self {
             map,
             start: (start_row, start_column),
@@ -57,10 +55,6 @@ impl PipeMap {
     }
 
     pub fn go(&mut self, direction: char) {
-        // println!(
-        //     "Trying to go {:?} from location {:?}",
-        //     direction, self.location
-        // );
         let (mut row, mut column) = self.location;
         match direction {
             'n' => row -= 1,
@@ -70,7 +64,6 @@ impl PipeMap {
             _ => unreachable!("Unrecognized direction."),
         };
         self.location = (row, column);
-        // println!("Ended up at location {:?}", self.location);
     }
 
     pub fn get_pipe(&self) -> char {
@@ -140,7 +133,6 @@ impl PipeMap {
         }
         let mut valid_directions = Vec::new();
         for direction in directions {
-            println!("Is {:?} a valid direction?", direction);
             self.go(direction);
             if self.get_pipe() == '.' {
                 self.location = self.start;
@@ -149,21 +141,17 @@ impl PipeMap {
             if self.to_direction(&self.get_pipe()).0 == self.opposite_direction(&direction)
                 || self.to_direction(&self.get_pipe()).1 == self.opposite_direction(&direction)
             {
-                println!("Success");
                 valid_directions.push(direction);
             }
             self.location = self.start;
         }
         if valid_directions.len() != 2 {
-            panic!("Failed valid directions");
+            unreachable!("Invalid direction count")
         }
         valid_directions
     }
 
     pub fn traverse(&mut self, initial_direction: char) -> Option<(i64,i64)> {
-        println!("Traversing...");
-        println!("Starting at {:?}", self.start);
-        println!("First direction {:?}", initial_direction);
         let mut pipe_loop = PipeLoop::from(&self.map);
         self.go(initial_direction);
         let mut previous_direction = initial_direction;
@@ -188,13 +176,7 @@ impl PipeMap {
                 self.opposite_direction(&previous_direction),
             )),
         );
-        println!("{:?}", loop_length);
-        for line in pipe_loop.map.clone() {
-            println!(
-                "{:?}",
-                line.iter().map(|c| c.to_string()).collect::<String>()
-            );
-        }
+        pipe_loop.count -= 1; // discount the addition of the start square
         pipe_loop.process()
     }
 }
@@ -251,10 +233,6 @@ impl PipeLoop {
                 match value {
                     '|' => {
                         inside = !inside;
-                        println!(
-                            "Swtiched at {:?}: {:?}, {:?}",
-                            value, row_index, column_index
-                        );
                     }
                     '7' | 'J' => {
                         if prev_corner == '\0' {
@@ -265,10 +243,6 @@ impl PipeLoop {
                         match value {
                             v if v == &s_corner => {
                                 inside = !inside;
-                                println!(
-                                    "Switched at {:?}: {:?}, {:?}",
-                                    value, row_index, column_index
-                                );
                             }
                             v if v == &u_corner => prev_corner = '\0',
                             _ => unreachable!(
@@ -298,7 +272,6 @@ impl PipeLoop {
                     '.' => {
                         if inside {
                             inner += 1;
-                            println!("inner at {:?}: {:?}, {:?}", value, row_index, column_index);
                         }
                     }
                     _ => unreachable!("Invalid character in loop counting"),
@@ -318,7 +291,6 @@ fn main() -> Result<()> {
     let mut p2: i64 = 0;
 
     let mut map = PipeMap::from(input);
-    println!("Start: {:?}", map.start);
 
     let path: Vec<(usize, usize)> = Vec::new();
 
