@@ -32,16 +32,14 @@ impl Node {
         }
     }
     pub fn add_child(&mut self, child_key: &str, direction: Direction) {
-        println!("Adding to {:?}: {:?} as a {:?} child", self.key, child_key, direction);
         let child_key = child_key.to_string();
         let _ = match direction {
-            Direction::Left => {println!("Left child");self.left = Some(child_key)},
-            Direction::Right => {println!("Right child");self.right = Some(child_key)},
+            Direction::Left => self.left = Some(child_key),
+            Direction::Right => self.right = Some(child_key),
         };
     }
 
     pub fn get_child(&self, direction: Direction) -> String {
-        println!("Node: {:?}", self);
         match direction {
             Direction::Left => self.left.clone().expect("No L child for node"),
             Direction::Right => self.right.clone().expect("No R child for node"),
@@ -50,8 +48,9 @@ impl Node {
 }
 
 impl Graph {
-    pub fn from(mut lines: Lines) -> Self {
+    pub fn from(mut lines: Lines) -> (Self, Vec<String>) {
         let mut nodes: HashMap<String, Node> = HashMap::new();
+        let mut starting_keys: Vec<String> = Vec::new();
         fn parse(line: &str) -> Vec<&str> {
             return line
                 .split(|c: char| !c.is_alphabetic())
@@ -60,7 +59,6 @@ impl Graph {
                 .collect::<Vec<_>>();
         }
         let new_nodes = lines.filter(|line| !line.is_empty()).map(|line| {
-            println!("Line: {:?}", line);
             match line
                 .split(|c: char| !c.is_alphabetic())
                 .filter(|w| !w.is_empty())
@@ -76,16 +74,15 @@ impl Graph {
             }
         });
         for ((node_key, mut node), (left_key, right_key)) in new_nodes.clone() {
+            let node_key = node_key.to_string();
+            if node_key.clone().ends_with("A") {
+                starting_keys.push(node_key.clone())
+            }
             node.add_child(left_key, Direction::Left);
             node.add_child(right_key, Direction::Right);
-            nodes.insert(node_key.to_string(), node);
+            nodes.insert(node_key, node);
         }
-        for node in nodes.values() {
-            println!("Current state of node {:?}", node.key);
-            println!("Left child {:?}", node.left);
-            println!("Right child {:?}", node.right);
-        }
-        Self { nodes: nodes }
+        (Self { nodes: nodes }, starting_keys)
     }
     pub fn get(&self, key: &str) -> &Node {
         match self.nodes.get(key) {
@@ -143,7 +140,6 @@ fn main() -> Result<()> {
 
     let input = load_input(test);
 
-    let mut p1: i64;
     let mut p2: i64;
 
     let mut lines = input.lines();
@@ -153,24 +149,27 @@ fn main() -> Result<()> {
     let list_len = instructions.list.len();
     let mut ix = 0;
 
-    let map = Graph::from(lines.clone());
+    let (map, mut current_nodes) = Graph::from(lines.clone());
 
-    let mut count = 0;
-    let mut current_node = map.get("AAA");
+    let mut p2 = 0;
+    println!("nodes: {:?}", current_nodes);
 
     while let direction = instructions.list[ix] {
-        println!("Current node: {:?}", current_node.key);
-        current_node = map.get(&current_node.get_child(direction));
-        count += 1;
+        let mut new_nodes: Vec<String> = Vec::new();
+        for node_key in current_nodes.iter() {
+            let node = map.get(node_key);
+            let next_node = node.get_child(direction);
+            new_nodes.push(next_node);
+        }
+        p2 += 1;
         ix = (ix + 1) % list_len;
-        if current_node.key == "ZZZ" { break }
+        if new_nodes.iter().all(|key| key.ends_with("Z")) {
+            break;
+        }
+        current_nodes = new_nodes;
+        println!("nodes: {:?}", current_nodes);
     }
-    println!("Count: {}", count);
 
-    p1 = count;
-    p2 = 0;
-
-    println!("p1: {}", p1);
     println!("p2: {}", p2);
 
     Ok(())
