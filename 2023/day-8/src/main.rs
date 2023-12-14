@@ -11,50 +11,47 @@ enum Direction {
     Right,
 }
 
-#[derive(Clone, Copy, Debug)]
-struct Node<'a> {
-    key: &'a str,
-    left: Option<&'a Node<'a>>,
-    right: Option<&'a Node<'a>>,
+#[derive(Clone, Debug)]
+struct Node {
+    key: String,
+    left: Option<String>,
+    right: Option<String>,
 }
 
 #[derive(Clone)]
-struct Graph<'a> {
-    nodes: HashMap<&'a str, Node<'a>>,
+struct Graph {
+    nodes: HashMap<String, Node>,
 }
 
-impl<'a> Node<'a> {
-    pub fn from(key: &'a str) -> Self {
+impl Node {
+    pub fn from(key: &str) -> Self {
         Self {
-            key: key,
+            key: key.to_string(),
             left: None,
             right: None,
         }
     }
-    pub fn add_children(&mut self, left: &'a Node<'a>, right: &'a Node<'a>) {
-        self.left = Some(left);
-        self.right = Some(right);
-    }
-    pub fn add_child(&mut self, node: &'a Node<'a>, direction: &Direction) {
-        println!("Adding to {:?}: {:?} as a {:?} child", self.key, node.key, direction);
+    pub fn add_child(&mut self, child_key: &str, direction: Direction) {
+        println!("Adding to {:?}: {:?} as a {:?} child", self.key, child_key, direction);
+        let child_key = child_key.to_string();
         let _ = match direction {
-            Direction::Left => {println!("Left child");self.left = Some(node)},
-            Direction::Right => {println!("Right child");self.right = Some(node)},
+            Direction::Left => {println!("Left child");self.left = Some(child_key)},
+            Direction::Right => {println!("Right child");self.right = Some(child_key)},
         };
     }
 
-    pub fn get_child(&self, direction: &Direction) -> &'a Node<'a> {
+    pub fn get_child(&self, direction: Direction) -> String {
         println!("Node: {:?}", self);
         match direction {
-            Direction::Left => self.left.expect("No L child for node"),
-            Direction::Right => self.right.expect("No R child for node"),
+            Direction::Left => self.left.clone().expect("No L child for node"),
+            Direction::Right => self.right.clone().expect("No R child for node"),
         }
     }
 }
 
-impl<'a> Graph<'a> {
-    pub fn from(mut lines: Lines<'a>) -> Self {
-        let mut nodes: HashMap<&'a str, Node<'a>> = HashMap::new();
+impl Graph {
+    pub fn from(mut lines: Lines) -> Self {
+        let mut nodes: HashMap<String, Node> = HashMap::new();
         fn parse(line: &str) -> Vec<&str> {
             return line
                 .split(|c: char| !c.is_alphabetic())
@@ -78,16 +75,10 @@ impl<'a> Graph<'a> {
                 _ => panic!("Failed to split line {line}"),
             }
         });
-        for ((node_key, node), (_, _)) in new_nodes.clone() {
-            nodes.insert(node_key, node);
-        }
-        for ((_, mut node), (left_key, _)) in new_nodes.clone() {
-            let left_child = nodes.get(left_key).unwrap();
-            node.add_child(&left_child, &Direction::Left);
-        }
-        for ((_, mut node), (_, right_key)) in new_nodes.clone() {
-            let right_child = nodes.get(right_key).unwrap();
-            node.add_child(&right_child, &Direction::Right);
+        for ((node_key, mut node), (left_key, right_key)) in new_nodes.clone() {
+            node.add_child(left_key, Direction::Left);
+            node.add_child(right_key, Direction::Right);
+            nodes.insert(node_key.to_string(), node);
         }
         for node in nodes.values() {
             println!("Current state of node {:?}", node.key);
@@ -96,7 +87,7 @@ impl<'a> Graph<'a> {
         }
         Self { nodes: nodes }
     }
-    pub fn get(&self, key: &'a str) -> &Node<'_> {
+    pub fn get(&self, key: &str) -> &Node {
         match self.nodes.get(key) {
             Some(node) => node,
             None => panic!("Could not find node!"),
@@ -159,15 +150,20 @@ fn main() -> Result<()> {
 
     let instructions = Instructions::from(lines.next().unwrap());
 
+    let list_len = instructions.list.len();
+    let mut ix = 0;
+
     let map = Graph::from(lines.clone());
 
     let mut count = 0;
     let mut current_node = map.get("AAA");
 
-    for direction in instructions.list {
+    while let direction = instructions.list[ix] {
         println!("Current node: {:?}", current_node.key);
-        current_node = current_node.get_child(&direction);
+        current_node = map.get(&current_node.get_child(direction));
         count += 1;
+        ix = (ix + 1) % list_len;
+        if current_node.key == "ZZZ" { break }
     }
     println!("Count: {}", count);
 
