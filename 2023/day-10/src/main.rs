@@ -91,6 +91,17 @@ impl PipeMap {
             _ => unreachable!("Found invalid character"),
         }
     }
+    pub fn from_direction(&self, exits: (char, char)) -> char {
+        match exits {
+            ('n', 's') | ('s', 'n') => '|',
+            ('e', 'w') | ('w', 'e') => '-',
+            ('n', 'e') | ('e', 'n') => 'L',
+            ('n', 'w') | ('w', 'n') => 'J',
+            ('s', 'w') | ('w', 's') => '7',
+            ('s', 'e') | ('e', 's') => 'F',
+            _ => unreachable!("Found invalid exits"),
+        }
+    }
 
     pub fn opposite_direction(&self, direction: &char) -> char {
         match direction {
@@ -149,37 +160,81 @@ impl PipeMap {
         valid_directions
     }
 
-    pub fn empty_map(&self) -> Vec<Vec<char>> {
-        vec![vec!['.';self.map[0].len()];self.map.len()]
-    }
-
     pub fn traverse(&mut self, initial_direction: char) -> Option<usize> {
         println!("Traversing...");
         println!("Starting at {:?}", self.start);
         println!("First direction {:?}", initial_direction);
-        let mut loop_outline = self.empty_map();
+        let mut pipe_loop = PipeLoop::from(&self.map);
         self.go(initial_direction);
         let mut previous_direction = initial_direction;
         let mut next_direction = self.get_next(&previous_direction);
         let mut loop_length = 0;
+        pipe_loop.add(self.location, self.get_pipe());
         while !self.location.eq(&self.start) {
             let current_direction = next_direction;
             self.go(current_direction);
             if self.get_pipe().eq(&'.') {
                 return None;
             }
-            next_direction = self.get_next( &current_direction);
+            next_direction = self.get_next(&current_direction);
             previous_direction = current_direction;
             loop_length += 1;
+            pipe_loop.add(self.location, self.get_pipe());
         }
+        pipe_loop.add(
+            self.location,
+            self.from_direction((
+                initial_direction,
+                self.opposite_direction(&previous_direction),
+            )),
+        );
         println!("{:?}", loop_length);
-        Some(loop_length / 2 + loop_length%2)
+        for line in pipe_loop.map.clone() {
+            println!(
+                "{:?}",
+                line.iter().map(|c| c.to_string()).collect::<String>()
+            );
+        }
+        let count = pipe_loop.count();
+        println!("inner: {:?}", count);
+        Some(loop_length / 2 + loop_length % 2)
+    }
+}
+
+struct PipeLoop {
+    map: Vec<Vec<char>>,
+}
+
+impl PipeLoop {
+    pub fn from(map: &Vec<Vec<char>>) -> Self {
+        Self {
+            map: vec![vec!['.'; map[0].len()]; map.len()],
+        }
+    }
+
+    pub fn add(&mut self, (row, column): (usize, usize), c: char) {
+        self.map[row][column] = c;
+    }
+
+    pub fn count(&self) -> i32 {
+        let mut inner = 0;
+        for line in self.map.iter() {
+            let mut inside = false;
+            for value in line {
+                if value == &'|' {
+                    inside = !inside
+                } else if value == &'.' {
+                    inner += 1
+                }
+            }
+        }
+        inner
     }
 }
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = false;
+    let test = true;
 
     let input = load_input(test);
     let mut p1: i64 = 0;
