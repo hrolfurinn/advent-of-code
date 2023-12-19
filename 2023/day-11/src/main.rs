@@ -21,63 +21,80 @@ fn load_input(test: bool) -> String {
 
 fn main() -> Result<()> {
     env::set_var("RUST_BACKTRACE", "1");
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
 
-    let mut p1: i64 = 0;
-    let mut p2: i64 = 0;
+    let p1: i64;
+    let p2: i64;
 
     let mut row_count: usize = 0;
     let mut column_count: usize = 0;
 
     let mut filled_rows: HashSet<usize> = HashSet::new();
     let mut filled_columns: HashSet<usize> = HashSet::new();
-    let mut galaxies: Vec<(usize,usize)> = Vec::new();
-    
+    let mut galaxies: Vec<(usize, usize)> = Vec::new();
+
     for (row_index, line) in input.lines().enumerate() {
         column_count = line.len();
-        for (column_index, character) in line.chars().enumerate() {
+        for (column_index, character) in line.trim().chars().enumerate() {
             if character == '#' {
                 filled_rows.insert(row_index);
                 filled_columns.insert(column_index);
-                galaxies.push((row_index,column_index))
+                galaxies.push((row_index, column_index));
             }
         }
         row_count += 1;
     }
 
-    let mut cum_row_shift = 0;
-    let mut row_shifts: Vec<_> = (0..row_count).map(|index| {
-        cum_row_shift += !filled_rows.contains(&index) as usize;
-        index + cum_row_shift
-    }).collect();
-    let mut cum_column_shift = 0;
-    let mut column_shifts: Vec<_> = (0..column_count).map(|index| {
-        cum_column_shift += !filled_columns.contains(&index) as usize;
-        index + cum_row_shift
-    }).collect();
-    for (id, galaxy) in galaxies.iter().enumerate() {println!("Location {:?}: {:?}", id, galaxy)}
-    galaxies = galaxies.iter().map(
-        |(row_index, column_index)| {
-            (row_index + row_shifts[*row_index], column_index + column_shifts[*column_index])
-        }
-    ).collect();
-    for (id, galaxy) in galaxies.iter().enumerate() {println!("New Location {:?}: {:?}", id, galaxy)}
+    let (mut cum_row_shift1, mut cum_row_shift2) = (0, 0);
+    let (row_shifts1, row_shifts2): (Vec<_>, Vec<_>) = (0..row_count)
+        .map(|index| {
+            cum_row_shift1 += !filled_rows.contains(&index) as usize;
+            cum_row_shift2 += (1000000 - 1) * (!filled_rows.contains(&index) as usize);
+            (index + cum_row_shift1, index + cum_row_shift2)
+        })
+        .unzip();
+    let (mut cum_column_shift1, mut cum_column_shift2) = (0, 0);
+    let (column_shifts1, column_shifts2): (Vec<_>, Vec<_>) = (0..column_count)
+        .map(|index| {
+            cum_column_shift1 += !filled_columns.contains(&index) as usize;
+            cum_column_shift2 += (1000000 - 1) * (!filled_columns.contains(&index) as usize);
+            (index + cum_column_shift1, index + cum_column_shift2)
+        })
+        .unzip();
+    let (galaxies1, galaxies2): (Vec<_>, Vec<_>) = galaxies
+        .iter()
+        .map(|(row_index, column_index)| {
+            (
+                (row_shifts1[*row_index], column_shifts1[*column_index]),
+                (row_shifts2[*row_index], column_shifts2[*column_index]),
+            )
+        })
+        .unzip();
+    p1 = galaxies1
+        .iter()
+        .enumerate()
+        .flat_map(|(id, (row1, col1))| {
+            galaxies1[id + 1..].iter().map(move |(row2, col2)| {
+                let row_diff = (*row2 as i64 - *row1 as i64).abs();
+                let col_diff = (*col2 as i64 - *col1 as i64).abs();
+                row_diff + col_diff
+            })
+        })
+        .sum();
 
-
-    p1 = galaxies.iter().enumerate().map(
-        |(id, (row1, col1))| {
-            let distances = galaxies.iter().skip(id + 1).map(
-                |(row2, col2)| {
-                    let distance = (*row2 as i64 - *row1 as i64).abs() + (*col2 as i64 - *col1 as i64).abs();
-                    println!("Distance between ({:?},{:?}) and ({:?},{:?}) is {:?}", row1,col1,row2,col2,distance);
-                    distance
-                }
-            );
-            distances.sum::<i64>()
-        }
-    ).sum::<i64>();
+    p2 = galaxies2
+        .iter()
+        .enumerate()
+        .flat_map(|(id, (row1, col1))| {
+            galaxies2[id + 1..].iter().map(move |(row2, col2)| {
+                let row_diff = (*row2 as i64 - *row1 as i64).abs();
+                let col_diff = (*col2 as i64 - *col1 as i64).abs();
+                row_diff + col_diff
+            })
+        })
+        .sum();
 
     println!("p1: {}", p1);
     println!("p2: {}", p2);
