@@ -1,7 +1,45 @@
-use std::env;
 use std::fs::read_to_string;
-use std::collections::HashSet;
 use std::io::Result;
+
+// Use AHashSet for faster hashing
+use ahash::AHashSet;
+
+#[inline(always)]
+fn encode_position(x: i32, y: i32) -> i64 {
+    ((x as i64) << 32) | (y as u32 as i64)
+}
+
+fn process_line(directions: &str) -> usize {
+    let mut visited_homes = AHashSet::with_capacity(directions.len());
+    let mut positions = [(0i32, 0i32), (0i32, 0i32)]; // [Santa, Robo-Santa]
+    visited_homes.insert(encode_position(0, 0));
+
+    for (i, &byte) in directions.as_bytes().iter().enumerate() {
+        let idx = i & 1; // 0 for Santa, 1 for Robo-Santa
+        match byte {
+            b'>' => positions[idx].0 += 1,
+            b'<' => positions[idx].0 += -1,
+            b'^' => positions[idx].1 += 1,
+            b'v' => positions[idx].1 += -1,
+            _ => unreachable!("Invalid direction character!"),
+        };
+
+        visited_homes.insert(encode_position(positions[idx].0, positions[idx].1));
+    }
+    visited_homes.len()
+}
+
+fn main() -> Result<()> {
+    let test = false;
+
+    let input = load_input(test);
+    let input = input.trim();
+
+    let house_count = process_line(&input);
+    println!("{house_count}");
+
+    Ok(())
+}
 
 fn load_input(test: bool) -> String {
     let path = if test {
@@ -9,58 +47,9 @@ fn load_input(test: bool) -> String {
     } else {
         "./input/input.txt"
     };
-    match read_to_string(path) {
-        Ok(x) => x,
-        Err(e) => {
-            println!("{e:?}");
-            "dummy_path".to_string()
-        }
-    }
+    read_to_string(path).unwrap_or_else(|e| {
+        eprintln!("Failed to read input file: {e}");
+        std::process::exit(1);
+    })
 }
 
-fn get_direction(direction_char: char) -> (i8, i8) {
-    match direction_char {
-        '>' => (1,0),
-        '<'=> (-1,0),
-        '^' => (0,1),
-        'v' => (0,-1),
-        _ => unreachable!("Invalid direction character"),
-    }
-}
-
-fn process_line(directions: &str) -> usize {
-    let mut visited_homes = HashSet::new();
-    let mut santa_position = (0,0);
-    let mut robo_santa_position = (0,0);
-    let mut santas_turn = true;
-    visited_homes.insert(santa_position);
-    for char in directions.chars() {
-        let directions = get_direction(char);
-        if santas_turn {
-            santa_position.0 += directions.0;
-            santa_position.1 += directions.1;
-            visited_homes.insert(santa_position);
-        } else {
-            robo_santa_position.0 += directions.0;
-            robo_santa_position.1 += directions.1;
-            visited_homes.insert(robo_santa_position);
-        }
-        santas_turn = !santas_turn
-    };
-    visited_homes.len()
-}
-
-fn main() -> Result<()> {
-    env::set_var("RUST_BACKTRACE", "1");
-    let test = false;
-
-    let input = load_input(test);
-
-    let lines = input.lines();
-
-    for line in lines {
-        let house = process_line(line);
-        println!("{house}");
-    };
-    Ok(())
-}
