@@ -32,7 +32,7 @@ fn process_line(directions: &str) -> usize {
     let mut visited_homes = HashSet::new();
     let mut santa_position = (0,0);
     let mut robo_santa_position = (0,0);
-    let mut santas_turn = false;
+    let mut santas_turn = true;
     visited_homes.insert(santa_position);
     for char in directions.chars() {
         let directions = get_direction(char);
@@ -42,9 +42,10 @@ fn process_line(directions: &str) -> usize {
             visited_homes.insert(santa_position);
         } else {
             robo_santa_position.0 += directions.0;
-            robo_santa_position.0 += directions.1;
+            robo_santa_position.1 += directions.1;
             visited_homes.insert(robo_santa_position);
         }
+        santas_turn = !santas_turn
     };
     visited_homes.len()
 }
