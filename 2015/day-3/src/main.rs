@@ -30,13 +30,21 @@ fn get_direction(direction_char: char) -> (i8, i8) {
 
 fn process_line(directions: &str) -> usize {
     let mut visited_homes = HashSet::new();
-    let mut position = (0,0);
-    visited_homes.insert(position);
+    let mut santa_position = (0,0);
+    let mut robo_santa_position = (0,0);
+    let mut santas_turn = false;
+    visited_homes.insert(santa_position);
     for char in directions.chars() {
         let directions = get_direction(char);
-        position.0 += directions.0;
-        position.1 += directions.1;
-        visited_homes.insert(position);
+        if santas_turn {
+            santa_position.0 += directions.0;
+            santa_position.1 += directions.1;
+            visited_homes.insert(santa_position);
+        } else {
+            robo_santa_position.0 += directions.0;
+            robo_santa_position.0 += directions.1;
+            visited_homes.insert(robo_santa_position);
+        }
     };
     visited_homes.len()
 }
