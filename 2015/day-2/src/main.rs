@@ -3,12 +3,11 @@ use std::fs::read_to_string;
 use std::io::Result;
 
 fn process_line(directions: &str) -> u32 {
-    let side_areas = directions
+    let sides = directions
         .split('x')
-        .map(|substring| substring.parse::<u32>().unwrap_or_default())
-        .tuple_combinations()
-        .map(|(side_1, side_2)| side_1 * side_2);
-     side_areas.clone().sum::<u32>() * 2 + side_areas.min().unwrap_or_default()
+        .map(|substring| substring.parse::<u32>().unwrap_or_default());
+    2 * (sides.clone().sum::<u32>() - sides.clone().max().unwrap_or_default())
+        + sides.product::<u32>()
 }
 
 fn main() -> Result<()> {
