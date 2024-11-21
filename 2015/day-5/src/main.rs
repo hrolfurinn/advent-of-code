@@ -1,51 +1,31 @@
 use std::fs::read_to_string;
 use std::io::Result;
-
-fn is_bad_pair(c1: u8, c2: u8) -> bool {
-    match (c1, c2) {
-        (b'a', b'b') => true,
-        (b'c', b'd') => true,
-        (b'p', b'q') => true,
-        (b'x', b'y') => true,
-        _ => false,
-    }
-}
-
-fn is_vowel(c: u8) -> bool {
-    match c {
-        b'a' => true,
-        b'e' => true,
-        b'i' => true,
-        b'o' => true,
-        b'u' => true,
-        _ => false,
-    }
-}
+use std::collections::HashSet;
 
 fn process_line(word: &str) -> u32 {
-    let length = word.len();
-    let mut vowel_count = 0;
-    let mut has_twin_letter = false;
+    let mut twin_pairs = HashSet::new();
 
-    for (ix, char_pair) in word.as_bytes().windows(2).enumerate() {
-        let c1 = char_pair[0];
-        let c2 = char_pair[1];
-        if is_bad_pair(c1, c2) {
-            return 0;
-        };
-        if c1 == c2 {
-            has_twin_letter = true;
-        };
-        if is_vowel(c1) { vowel_count += 1 };
-        if ix == length - 2 {
-            if is_vowel(c2) { vowel_count += 1 };
-        };
+    let mut has_dupe_twin_pair = false;
+    let mut has_exe = false;
+
+    for char_triple in word.as_bytes().windows(3) {
+        let c1 = char_triple[0];
+        let c2 = char_triple[1];
+        let c3 = char_triple[2];
+        match (c1 == c2, c1 == c3) {
+            (_, true) => has_exe = true,
+            (true,false) => { 
+                if twin_pairs.contains(&c1) { 
+                    has_dupe_twin_pair = true 
+                } else { twin_pairs.insert(c1); };
+            },
+            _ => {}
+        }
     }
 
-    if vowel_count > 2 && has_twin_letter == true {
-        return 1
-    }
+    if has_exe && has_dupe_twin_pair { return 1 }
     0
+
 }
 
 fn main() -> Result<()> {
