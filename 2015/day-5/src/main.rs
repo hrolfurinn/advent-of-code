@@ -1,11 +1,9 @@
-use std::collections::HashSet;
+use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::io::Result;
 
 fn process_line(word: &str) -> u32 {
-    println!("--------------------------");
-    println!("inspecting {word}");
-    let mut twin_pairs = HashSet::new();
+    let mut twin_pairs = HashMap::new();
 
     let length = word.len();
 
@@ -16,33 +14,30 @@ fn process_line(word: &str) -> u32 {
         let c1 = char_triple[0];
         let c2 = char_triple[1];
         let c3 = char_triple[2];
-        println!("inspecting {},{},{}", c1, c2, c3);
-
-        has_dupe_twin_pair |= twin_pairs.contains(&(c1, c2));
-
-        if ix == length - 3 {
-            println!("End of the word");
-            has_dupe_twin_pair |= twin_pairs.contains(&(c2, c3));
-        }
 
         if c1 == c3 {
-            println!("First and last identical");
             has_exe = true;
-
-            if c1 == c2 {
-                println!("So is the second, holding off on adding it to HashSet");
-                continue;
-            };
         }
-        println!("Adding first two to HashSet");
-        twin_pairs.insert((c1, c2));
+
+        if ix == length - 3 {
+            has_dupe_twin_pair |= twin_pairs.contains_key(&(c2, c3));
+        }
+
+        if !twin_pairs.contains_key(&(c1, c2)) {
+            twin_pairs.insert((c1, c2), ix);
+            continue;
+        }
+
+        if twin_pairs[&(c1, c2)] == ix - 1 {
+            continue; // Realizing I should use the index came from a Reddit debug ex. "aaaa"
+        }
+
+        has_dupe_twin_pair = true
     }
 
     if has_exe && has_dupe_twin_pair {
-        println!("SUCCESS");
         return 1;
     }
-    println!("FAILURE");
     0
 }
 
