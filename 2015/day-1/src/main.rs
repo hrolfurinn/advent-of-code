@@ -1,15 +1,19 @@
 use std::fs::read_to_string;
 use std::io::Result;
 
-fn process_line(directions: &str) -> i32 {
-    directions
-        .chars()
-        .map(|c| match c {
+fn process_line(directions: &str) -> std::result::Result<usize, &'static str> {
+    let mut floor = 0;
+    for (ix, char) in directions.chars().enumerate() {
+        floor += match char {
             '(' => 1,
             ')' => -1,
-            _ => unreachable!("Bad directions! {c}"),
-        })
-        .sum()
+            _ => unreachable!("Bad directions! {char}")
+        };
+        if floor < 0 {
+            return Ok(ix + 1)
+        };
+    }
+    return Err("No basement for")
 }
 
 fn main() -> Result<()> {
@@ -18,7 +22,7 @@ fn main() -> Result<()> {
     let input = load_input(test);
 
     for line in input.lines() {
-        let end_floor = process_line(line);
+        let end_floor = process_line(line).unwrap();
         println!("{end_floor}");
     };
 
