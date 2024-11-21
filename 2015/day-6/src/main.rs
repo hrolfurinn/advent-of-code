@@ -143,9 +143,9 @@ impl Board {
 
     fn change(&mut self, x: usize, y: usize, action: Action) {
         self.board[x][y] = match action {
-            Action::On => 1,
-            Action::Off => 0,
-            Action::Toggle => 1 - self.board[x][y],
+            Action::On => self.board[x][y] + 1,
+            Action::Off => self.board[x][y].saturating_add_signed(-1),
+            Action::Toggle => self.board[x][y] + 2,
         }
     }
 
