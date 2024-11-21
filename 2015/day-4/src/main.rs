@@ -6,7 +6,7 @@ fn process_line(string: &str) -> u32 {
     while prefix > 0 {
         let new_string = string.to_owned() + &prefix.to_string();
         let hash = md5::compute(new_string);
-        if format!("{:x}", hash)[0..5] == *"00000" {
+        if format!("{:x}", hash)[0..6] == *"000000" {
             println!("For new string {string}{prefix} have {:x}", hash);
             return prefix;
         };
