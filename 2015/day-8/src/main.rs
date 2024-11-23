@@ -24,18 +24,28 @@ fn main() -> Result<()> {
             match line[ix + 1] {
                 'x' => {
                     ix += 4;
-                },
+                }
                 '"' | '\\' => {
                     ix += 2;
-                },
-                _ => { unreachable!("No character found") },
+                }
+                _ => {
+                    unreachable!("No character found")
+                }
             }
         }
         code_length += ix;
     }
-    let result = code_length - string_length;
+    let p1_result = code_length - string_length;
 
-    println!("{result}");
+    let new_chars = input
+        .chars()
+        .filter(|&c| c == '\\' || c == '"')
+        .collect::<Vec<_>>()
+        .len()
+        + (2 * input.lines().collect::<Vec<_>>().len());
+
+    println!("{p1_result}");
+    println!("{new_chars}");
 
     Ok(())
 }
