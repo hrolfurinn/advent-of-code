@@ -26,23 +26,30 @@ impl Memory {
             return cached;
         }
 
-        let command = self.map.get(&key).expect("Value not found in memory").clone();
+        let command = self
+            .map
+            .get(&key)
+            .expect("Value not found in memory")
+            .clone();
         let result = match command.trim().split(" ").collect::<Vec<_>>().as_slice() {
             [v1, "AND", v2] => self.get(v1) & self.get(v2),
             [v1, "OR", v2] => self.get(v1) | self.get(v2),
             [v, "LSHIFT", d] => self.get(v) << self.get(d),
             [v, "RSHIFT", d] => self.get(v) >> self.get(d),
             ["NOT", v] => !self.get(v),
-            [v] => self.get(v), // Single variable or number
+            [v] => self.get(v),
             _ => unreachable!("Invalid command: {command}"),
         };
-        self.cache.insert(key,result);
+        self.cache.insert(key, result);
         result
-
     }
 
     fn set(&mut self, key: &str, command: &str) {
         self.map.insert(get_key(key), command.to_string());
+    }
+
+    fn reset_cache(&mut self) {
+        self.cache.clear();
     }
 }
 
@@ -61,6 +68,12 @@ fn main() -> Result<()> {
         let object = object.trim();
         memory.set(object, value)
     }
+
+    let a = memory.get("a");
+
+    memory.set("b", &a.to_string());
+
+    memory.reset_cache();
 
     let a = memory.get("a");
 
