@@ -33,7 +33,7 @@ impl Geography {
                     .map(|(city_1, city_2)| self.distances.get(&(city_1.to_string(), city_2.to_string())).unwrap())
                     .sum::<u32>()
             })
-            .min().unwrap()
+            .max().unwrap()
     }
 }
 
