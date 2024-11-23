@@ -1,4 +1,3 @@
-use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::io::Result;
 
@@ -8,7 +7,7 @@ fn read_sequence(sequence: &Vec<u32>) -> Vec<u32> {
     while ix < sequence.len() {
         let digit = sequence[ix];
         let mut count = 1;
-        while ix + count < sequence.len() && sequence[ix+ count] == digit {
+        while ix + count < sequence.len() && sequence[ix + count] == digit {
             count += 1;
         }
         result.append(
@@ -35,7 +34,7 @@ fn main() -> Result<()> {
         .map(|c| c.to_digit(10).unwrap())
         .collect::<Vec<_>>();
 
-    for _ in 0..40 {
+    for _ in 0..50 {
         sequence = read_sequence(&sequence);
     }
 
