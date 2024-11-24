@@ -1,31 +1,29 @@
-use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::io::Result;
 
+fn get_total(json: &serde_json::Value) -> i64 {
+    match json {
+        serde_json::Value::Number(n) => n.as_i64().unwrap(),
+        serde_json::Value::Array(a) => a.iter().map(get_total).sum::<i64>(),
+        serde_json::Value::Object(o) => {
+            if o.values().any(|v| v == "red") {
+                0
+            } else {
+                o.values().map(get_total).sum::<i64>()
+            }
+        }
+        _ => 0,
+    }
+}
 
 fn main() -> Result<()> {
     let test = false;
 
     let input = load_input(test);
 
-    let mut total = 0;
+    let json: serde_json::Value = serde_json::from_str(&input).unwrap();
 
-    let mut running_number = String::new();
-
-    let mut chars = input.chars();
-
-    while let Some(c) = chars.next() {
-        if c == '-' || c.is_ascii_digit() {
-            running_number.push(c);
-            continue
-        }; 
-        if running_number.is_empty() {
-            continue;
-        }
-        let number = running_number.parse::<i32>().expect("Failed to parse string");
-        total += number;
-        running_number = String::new();
-    }
+    let total = get_total(&json);
 
     println!("{total}");
 
