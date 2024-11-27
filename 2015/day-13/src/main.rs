@@ -10,7 +10,7 @@ fn main() -> Result<()> {
 
     let mut happiness_map: HashMap<(String, String), i32> = HashMap::new();
     let mut guests: HashSet<String> = HashSet::new();
-    let mut first_guest = String::new();
+    let first_guest = "Me".to_string();
 
     for line in input.lines() {
         let parts = line.split(" ").collect::<Vec<_>>();
@@ -27,15 +27,11 @@ fn main() -> Result<()> {
             ),
             sign * happiness.parse::<i32>().unwrap(),
         );
-        if first_guest.is_empty() {
-            first_guest = subject.to_string(); // Guests are arranged in a circle, this guest is
-                                               // seated at 12 o'clock WLOG
-            continue;
-        }
-        if subject == first_guest {
-            continue;
-        }
         guests.insert(subject.to_string());
+    }
+    for guest in guests.iter() {
+        happiness_map.insert((first_guest.clone(),guest.to_string(),),0);
+        happiness_map.insert((guest.to_string(),first_guest.clone(),),0);
     }
 
     let maximum = guests
