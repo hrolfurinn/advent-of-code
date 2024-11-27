@@ -1,4 +1,4 @@
-use fxhash::FxHashMap;
+use ahash::{ HashMap, HashMapExt };
 use itertools::Itertools;
 use std::collections::HashSet;
 use std::fs::read_to_string;
@@ -9,8 +9,8 @@ fn main() -> Result<()> {
 
     let input = load_input(test);
 
-    let mut happiness_map: FxHashMap<(String, String), i32> = FxHashMap::default();
-    let mut guests: HashSet<String> = HashSet::new();
+    let mut happiness_map: HashMap<(String, String), i32> = HashMap::with_capacity(64);
+    let mut guests: HashSet<String> = HashSet::with_capacity(8);
     let first_guest = "Me".to_string();
 
     for line in input.lines() {
