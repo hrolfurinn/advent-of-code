@@ -1,5 +1,6 @@
+use fxhash::FxHashMap;
 use itertools::Itertools;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs::read_to_string;
 use std::io::Result;
 
@@ -8,7 +9,7 @@ fn main() -> Result<()> {
 
     let input = load_input(test);
 
-    let mut happiness_map: HashMap<(String, String), i32> = HashMap::new();
+    let mut happiness_map: FxHashMap<(String, String), i32> = FxHashMap::default();
     let mut guests: HashSet<String> = HashSet::new();
     let first_guest = "Me".to_string();
 
@@ -30,16 +31,16 @@ fn main() -> Result<()> {
         guests.insert(subject.to_string());
     }
     for guest in guests.iter() {
-        happiness_map.insert((first_guest.clone(),guest.to_string(),),0);
-        happiness_map.insert((guest.to_string(),first_guest.clone(),),0);
+        happiness_map.insert((first_guest.clone(), guest.to_string()), 0);
+        happiness_map.insert((guest.to_string(), first_guest.clone()), 0);
     }
 
     let maximum = guests
         .iter()
         .permutations(guests.len())
         .map(|mut guest_list| {
-            guest_list.push(&first_guest);
-            let result = guest_list
+            guest_list.push(&first_guest); // WLOG assume this guest is first, circular table
+            guest_list
                 .iter()
                 .fold(
                     (&first_guest, 0),
@@ -56,8 +57,7 @@ fn main() -> Result<()> {
                         )
                     },
                 )
-                .1;
-            result
+                .1
         })
         .max()
         .unwrap();
