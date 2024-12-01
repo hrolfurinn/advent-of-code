@@ -1,10 +1,34 @@
 use std::fs::read_to_string;
 use std::io::{Read, Result};
+use itertools::Itertools;
 
 fn main() -> Result<()> {
     let test = false;
 
     let input = load_input(test);
+
+    let mut list1 = Vec::new();
+    let mut list2 = Vec::new();
+
+    for line in input.lines() {
+        let (item1, item2) = line.trim().split_once("  ").unwrap();
+        list1.push(item1.trim().parse::<usize>().unwrap());
+        list2.push(item2.trim().parse::<usize>().unwrap());
+    }
+
+    let mut result = 0;
+
+    list1.sort();
+    let counts = list2.iter().counts();
+
+    for ix in (0..list2.len()) {
+        result += list1[ix] * counts.get(&list1[ix]).unwrap_or(&0);
+    }
+
+    println!("{result}");
+
+
+
 
     Ok(())
 }
