@@ -14,11 +14,9 @@ fn main() -> Result<()> {
     let cands = input.split("mul(");
 
     for cand in cands {
-        println!("{cand}");
         let Some((part1, part2)) = cand.split_once(",") else {
             continue;
         };
-        println!("part1: {part1}\npart2: {part2}");
         let Some((part2, _)) = part2.split_once(")") else {
             continue;
         };
@@ -29,6 +27,27 @@ fn main() -> Result<()> {
             continue;
         };
         p1 += num1 * num2;
+    }
+    let cands = input.split("do()");
+
+    for cand in cands {
+        let valid = cand.split("don't()").collect::<Vec<_>>()[0];
+        let mul_cands = valid.split("mul(");
+        for mul_cand in mul_cands {
+            let Some((part1, part2)) = mul_cand.split_once(",") else {
+                continue;
+            };
+            let Some((part2, _)) = part2.split_once(")") else {
+                continue;
+            };
+            let Ok(num1) = part1.parse::<u32>() else {
+                continue;
+            };
+            let Ok(num2) = part2.parse::<u32>() else {
+                continue;
+            };
+            p2 += num1 * num2;
+        }
     }
 
     println!("p1: {p1}\np2: {p2}");
