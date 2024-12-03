@@ -11,8 +11,24 @@ fn main() -> Result<()> {
     let mut p1 = 0;
     let mut p2 = 0;
 
-    for line in input.lines() {
-        let parts = line.split_whitespace().map(|s| s.trim()).collect::<Vec<_>>();
+    let cands = input.split("mul(");
+
+    for cand in cands {
+        println!("{cand}");
+        let Some((part1, part2)) = cand.split_once(",") else {
+            continue;
+        };
+        println!("part1: {part1}\npart2: {part2}");
+        let Some((part2, _)) = part2.split_once(")") else {
+            continue;
+        };
+        let Ok(num1) = part1.parse::<u32>() else {
+            continue;
+        };
+        let Ok(num2) = part2.parse::<u32>() else {
+            continue;
+        };
+        p1 += num1 * num2;
     }
 
     println!("p1: {p1}\np2: {p2}");
@@ -27,7 +43,8 @@ fn load_input(test: bool) -> String {
                 "./input/sample_input.txt"
             } else {
                 "./input/input.txt"
-            }.to_string()
+            }
+            .to_string()
         } else {
             String::new()
         }
