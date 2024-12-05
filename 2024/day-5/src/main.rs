@@ -2,7 +2,6 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::io::{Read, Result};
-use std::cmp::Ordering;
 
 fn lt(orderings: &Vec<bool>, first_num: &usize, second_num: &usize) -> bool {
     // Returns true iff the first number is supposed to appear before the second.
@@ -41,7 +40,16 @@ fn main() -> Result<()> {
             .split(",")
             .map(|num| num.parse::<usize>().unwrap())
             .collect_vec();
-        if print_attempt.is_sorted_by(|a,b| lt(&orderings,a,b)) {
+        let mut ok = true;
+        for second_ix in (0..print_attempt.len()).rev() {
+            for first_ix in 0..second_ix {
+                if lt(&orderings, &print_attempt[second_ix], &print_attempt[first_ix]) {
+                    ok = false;
+                    break;
+                }
+            }
+        }
+        if ok {
             p1 += print_attempt[print_attempt.len() / 2];
         } else {
             // Implementation of this insertion sort pseudo code
