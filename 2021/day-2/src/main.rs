@@ -22,7 +22,7 @@ fn main() -> Result<()> {
             "forward" => { x += dist; depth += aim * dist; },
             "down" => { y += dist; aim += dist; },
             "up" => { y -= dist; aim -= dist; },
-            _ => !unreachable!("NO"),
+            _ => unreachable!("NO"),
         }
     }
 
