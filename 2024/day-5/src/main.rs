@@ -37,23 +37,40 @@ fn main() -> Result<()> {
         orderings[100 * nums[0] + nums[1]] = true;
     }
     for line in lines {
-        let mut print_attempt = line
+        let print_attempt = line
             .split(",")
             .map(|num| num.parse::<usize>().unwrap())
             .collect_vec();
         if print_attempt.is_sorted_by(|a,b| lt(&orderings,a,b)) {
             p1 += print_attempt[print_attempt.len() / 2];
         } else {
-            print_attempt.sort_by(|a,b| {
-                if lt(&orderings, a, b) {
-                    Ordering::Less
-                } else if lt(&orderings, b, a) {
-                    Ordering::Greater
-                } else {
-                    Ordering::Equal
+            // Implementation of this insertion sort pseudo code
+            // Source: https://en.wikipedia.org/wiki/Insertion_sort
+            // i ← 1
+            // while i < length(A)
+            //    j ← i
+            //    while j > 0 and A[j-1] > A[j]
+            //        swap A[j] and A[j-1]
+            //        j ← j - 1
+            //    end while
+            //    i ← i + 1
+            // end while
+            let mut new_line = print_attempt.clone();
+            let mut ix = 0;
+            while ix < print_attempt.len() {
+                let mut jx = ix;
+                while jx > 0
+                    && !lt(&orderings,&new_line[jx],&new_line[jx-1])
+                {
+                    let larger = new_line[jx - 1];
+                    let smaller = new_line[jx];
+                    new_line[jx - 1] = smaller;
+                    new_line[jx] = larger;
+                    jx = jx - 1;
                 }
-            });
-            p2 += print_attempt[print_attempt.len() / 2];
+                ix = ix + 1;
+            }
+            p2 += new_line[new_line.len() / 2];
         }
     }
 
