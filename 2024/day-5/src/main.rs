@@ -2,6 +2,13 @@ use itertools::Itertools;
 use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::io::{Read, Result};
+use std::cmp::Ordering;
+
+fn lt(orderings: &Vec<bool>, first_num: &usize, second_num: &usize) -> bool {
+    // Returns true iff the first number is supposed to appear before the second.
+    // This is not a total ordering, since some number pairs can appear in any order.
+    orderings[first_num * 100 + second_num]
+}
 
 fn main() -> Result<()> {
     let test = false;
@@ -11,7 +18,11 @@ fn main() -> Result<()> {
     let mut p1 = 0;
     let mut p2 = 0;
 
-    let mut orderings: HashMap<usize, Vec<usize>> = HashMap::new();
+    // We use the fact that no value will be larger than 100.
+    // The orderings vector is indexed with [100*first_num + second_num],
+    // which contains a 1 iff the pair first_num|second_num was seen,
+    // i.e. iff first_num < second_num
+    let mut orderings = vec![false;100 * 100];
 
     let mut lines = input.lines();
 
@@ -23,63 +34,26 @@ fn main() -> Result<()> {
             .split("|")
             .map(|num| num.parse::<usize>().unwrap())
             .collect_vec();
-        if let Some(list) = orderings.get_mut(&nums[0]) {
-            list.push(nums[1]);
-        } else {
-            orderings.insert(nums[0], vec![nums[1]; 1]);
-        }
-        if !orderings.contains_key(&nums[1]) {
-            orderings.insert(nums[1], Vec::new());
-        }
+        orderings[100 * nums[0] + nums[1]] = true;
     }
     for line in lines {
-        let print_attempt = line
+        let mut print_attempt = line
             .split(",")
             .map(|num| num.parse::<usize>().unwrap())
             .collect_vec();
-        let mut ok = true;
-        for first_ix in 0..print_attempt.len() {
-            for second_ix in first_ix + 1..print_attempt.len() {
-                if let Some(list) = orderings.get(&print_attempt[second_ix]) {
-                    if list.contains(&print_attempt[first_ix]) {
-                        ok = false
-                    };
-                }
-            }
-        }
-        if ok {
+        if print_attempt.is_sorted_by(|a,b| lt(&orderings,a,b)) {
             p1 += print_attempt[print_attempt.len() / 2];
         } else {
-            // Implementation of this insertion sort pseudo code
-            // Source: https://en.wikipedia.org/wiki/Insertion_sort
-            // i ← 1
-            // while i < length(A)
-            //    j ← i
-            //    while j > 0 and A[j-1] > A[j]
-            //        swap A[j] and A[j-1]
-            //        j ← j - 1
-            //    end while
-            //    i ← i + 1
-            // end while
-            let mut new_line = print_attempt.clone();
-            let mut ix = 0;
-            while ix < print_attempt.len() {
-                let mut jx = ix;
-                while jx > 0
-                    && !orderings
-                        .get(&new_line[jx])
-                        .unwrap()
-                        .contains(&new_line[jx - 1])
-                {
-                    let larger = new_line[jx - 1];
-                    let smaller = new_line[jx];
-                    new_line[jx - 1] = smaller;
-                    new_line[jx] = larger;
-                    jx = jx - 1;
+            print_attempt.sort_by(|a,b| {
+                if lt(&orderings, a, b) {
+                    Ordering::Less
+                } else if lt(&orderings, b, a) {
+                    Ordering::Greater
+                } else {
+                    Ordering::Equal
                 }
-                ix = ix + 1;
-            }
-            p2 += new_line[new_line.len() / 2];
+            });
+            p2 += print_attempt[print_attempt.len() / 2];
         }
     }
 
