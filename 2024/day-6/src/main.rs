@@ -80,6 +80,7 @@ struct Grid {
     phantom_guard: Point,
     phantom_guard_direction: Direction,
     new_obstacles: Vec<Vec<bool>>,
+    tried_obstacles: Vec<Vec<bool>>,
 }
 
 impl Grid {
@@ -104,6 +105,7 @@ impl Grid {
         self.visited_points = vec![vec![None; self.width + 2]; self.height + 2];
         self.phantom_visited_points = vec![vec![HashSet::new(); self.width + 2]; self.height + 2];
         self.new_obstacles = vec![vec![false; self.width + 2]; self.height + 2];
+        self.tried_obstacles = vec![vec![false; self.width + 2]; self.height + 2];
         self.visit();
     }
 
@@ -129,13 +131,19 @@ impl Grid {
         self.phantom_visited_points[self.phantom_guard.y][self.phantom_guard.x].contains(&self.phantom_guard_direction)
     }
 
+    fn is_tried(&self, point: Point) -> bool {
+        self.tried_obstacles[point.y][point.x]
+    }
+
     fn add_obstacle(&mut self, new_point: Point) {
         if self.original_guard == new_point {
             return;
         };
+        if self.is_tried(new_point) { return };
+        self.tried_obstacles[new_point.y][new_point.x] = true;
         // We know the point is not off the grid and not at previous obstacle location
-        self.phantom_guard = self.original_guard;
-        self.phantom_guard_direction = Direction::Up;
+        self.phantom_guard = self.guard;
+        self.phantom_guard_direction = self.guard_direction.turn_right();
         self.phantom_visited_points = vec![vec![HashSet::new(); self.width + 2]; self.height + 2];
         if self.phantom_traverse(new_point) {
             self.new_obstacles[new_point.y][new_point.x] = true;
@@ -204,6 +212,7 @@ fn main() -> Result<()> {
         phantom_guard: Point { x: 0, y: 0 },
         phantom_guard_direction: Direction::Up,
         new_obstacles: Vec::new(),
+        tried_obstacles: Vec::new(),
     };
 
     grid.from(&input);
