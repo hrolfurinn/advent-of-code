@@ -134,11 +134,10 @@ impl Grid {
             return;
         };
         // We know the point is not off the grid and not at previous obstacle location
-        self.phantom_guard = self.guard;
-        self.phantom_guard_direction = self.guard_direction.turn_right();
+        self.phantom_guard = self.original_guard;
+        self.phantom_guard_direction = Direction::Up;
         self.phantom_visited_points = vec![vec![HashSet::new(); self.width + 2]; self.height + 2];
         if self.phantom_traverse(new_point) {
-            println!("new obstacle at {} {}", new_point.x, new_point.y);
             self.new_obstacles[new_point.y][new_point.x] = true;
         }
     }
@@ -154,7 +153,6 @@ impl Grid {
 
     fn guard_traverse(&mut self) {
         self.visit();
-        println!("Guard is at {} {}", self.guard.x, self.guard.y);
         let new_point = self.guard.add(&self.guard_direction);
         if self.is_off_grid(new_point) {
             return;
@@ -209,8 +207,6 @@ fn main() -> Result<()> {
     };
 
     grid.from(&input);
-
-    println!("Guard is at {} {}", grid.guard.x, grid.guard.y);
 
     grid.guard_traverse();
 
