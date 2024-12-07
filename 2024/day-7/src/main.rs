@@ -13,10 +13,9 @@ fn main() -> Result<()> {
 
     for line in input.lines() {
         let (target_str, numbers_str) = line.split_once(":").unwrap();
-        let numbers = numbers_str.trim().split(" ").map(|num| num.parse::<u64>().unwrap()).collect::<Vec<u64>>();
+        let mut numbers_iter = numbers_str.trim().split(" ").map(|num| num.parse::<u64>().unwrap());
         let target = target_str.trim().parse::<u64>().unwrap();
 
-        let mut numbers_iter = numbers.clone().into_iter();
         let first_num = numbers_iter.next().unwrap();
 
         if numbers_iter.clone().fold(vec![first_num], |acc_vec, num| {
@@ -35,7 +34,6 @@ fn main() -> Result<()> {
                 vec![add,concat,mult]
             }).filter(|val| *val <= target).collect()
         }).contains(&target) {p2 += target}
-        
     }
 
     println!("p1: {p1}\np2: {p2}");
