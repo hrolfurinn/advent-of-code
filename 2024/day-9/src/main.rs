@@ -4,48 +4,55 @@ use std::fs::read_to_string;
 use std::io::{Read, Result};
 use std::ops::{Index, IndexMut};
 
-fn print_flat_vec(flat_vec: &Vec<String>) {
+fn print_flat_vec(flat_vec: &Vec<Option<usize>>) {
     for char in flat_vec {
-        print!("{}", char)
+        print!(
+            "{}|",
+            if char.is_some() {
+                char.unwrap().to_string()
+            } else {
+                "".to_string()
+            }
+        )
     }
     println!();
 }
 
-fn collapse_flat_vec(flat_vec: &Vec<String>) -> usize {
+fn collapse_flat_vec(flat_vec: &Vec<Option<usize>>) -> usize {
     let mut output = flat_vec.clone();
     let mut ix = 0;
     while ix < output.len() {
-        if output[ix] != "." {
+        if output[ix].is_some() {
             ix += 1;
             continue;
         }
-        while let Some(last) = output.pop() {
-            if last == "." {
-                continue;
+        while ix < output.len() {
+            if let Some(last) = output.pop() {
+                if last.is_none() {
+                    continue;
+                }
+                output[ix] = last;
+                break;
             }
-            output[ix] = last;
-            break;
         }
         ix += 1;
     }
-    println!("Have output:");
-    print_flat_vec(&output);
     output
         .iter()
         .enumerate()
-        .map(|(ix, n)| ix * n.parse::<usize>().unwrap())
+        .map(|(ix, n)| ix * n.unwrap())
         .sum()
 }
 
 fn main() -> Result<()> {
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
 
     let mut p1 = 0;
     let mut p2 = 0;
 
-    let mut blocks: Vec<(bool, i32, Option<usize>)> = Vec::new(); // (is_free,space,file_id)
+    let mut blocks: Vec<(bool, i32, Option<usize>, bool)> = Vec::new(); // (is_free,space,file_id,has_been_moved)
 
     for (ix, space) in input
         .trim()
@@ -54,99 +61,85 @@ fn main() -> Result<()> {
         .enumerate()
     {
         if ix % 2 == 0 {
-            blocks.push((false, space, Some(ix / 2)));
+            blocks.push((false, space, Some(ix / 2), false));
         } else {
-            blocks.push((true, space, None));
+            blocks.push((true, space, None, false));
         }
     }
 
     let flat_vec = blocks
         .iter()
-        .flat_map(|&(is_free, space, file_id)| {
+        .flat_map(|&(is_free, space, file_id, _)| {
             if is_free {
-                vec![".".to_string(); space as usize]
+                vec![None; space as usize]
             } else {
-                vec![file_id.unwrap().to_string(); space as usize]
+                vec![Some(file_id.unwrap()); space as usize]
             }
         })
         .collect_vec();
-
-    print_flat_vec(&flat_vec);
 
     p1 += collapse_flat_vec(&flat_vec);
 
-    let flat_vec = blocks
-        .iter()
-        .flat_map(|&(is_free, space, file_id)| {
-            if is_free {
-                vec![".".to_string(); space as usize]
-            } else {
-                vec![file_id.unwrap().to_string(); space as usize]
-            }
-        })
-        .collect_vec();
-
-    print_flat_vec(&flat_vec);
-
-    let mut flat_vec = Vec::new();
-
-    let mut ix = 0;
-    while ix < blocks.len() {
-        println!("In {ix}");
-        let debug_flat_vec = blocks
-            .iter()
-            .flat_map(|&(is_free, space, file_id)| {
-                if is_free {
-                    vec![".".to_string(); space as usize]
-                } else {
-                    vec![file_id.unwrap().to_string(); space as usize]
-                }
-            })
-            .collect_vec();
-        print_flat_vec(&debug_flat_vec);
-        print_flat_vec(&flat_vec);
-        let (is_free, mut space, file_id) = blocks.remove(0);
-        if !is_free {
-            flat_vec.extend(vec![file_id.unwrap().to_string(); space as usize]);
-            ix += 1;
+    let mut ix = blocks.len() as i32 - 1;
+    while ix >= 0 {
+        let (is_free, space, _, has_been_moved) = blocks[ix as usize];
+        if is_free || has_been_moved {
+            ix -= 1;
             continue;
         }
-        println!("Need {space} space");
-        while 0.lt(&space) {
-            if let Some(block_ix_rev) = blocks
+        if let Some(block_ix) =
+            blocks
                 .iter()
-                .rev()
-                .position(|(is_free, block_space, _)| (!is_free) && block_space.le(&space))
-            {
-                let block_ix = blocks.len() - 1 - block_ix_rev;
-                let (is_free, block_space, block_file_id) = blocks[block_ix];
-                if is_free {
-                    panic!("Found free block")
-                };
-                space -= block_space;
-                flat_vec.extend(vec![
-                    block_file_id.unwrap().to_string();
-                    block_space as usize
-                ]);
-                blocks[block_ix] = (true, block_space, None);
-            } else {
-                break;
+                .enumerate()
+                .position(|(block_ix, (block_is_free, block_space, _, _))| {
+                    block_ix < ix as usize && *block_is_free && space.le(block_space)
+                })
+        {
+            let (_, space, file_id, _) = blocks.remove(ix as usize);
+            blocks.insert(ix as usize, (true, space, None, false));
+            
+            // Removing the block of free space from the filesystem leaves all indices after it
+            // shifted by 1, which includes all relevant indices in the rest of this loop
+            let (block_is_free, block_space, _, _) = blocks.remove(block_ix);
+            if !block_is_free {
+                panic!("Found non-free block")
+            };
+
+            let mut new_block_space = block_space;
+            if ix as usize - 1 + 1 < blocks.len() && ix as usize - 1 != block_ix && blocks[ix as usize - 1 + 1].0 {
+                let (left_is_free, left_space, _, _) = blocks[ix as usize - 1 + 1];
+                if left_is_free {
+                    new_block_space += left_space;
+                }
+                blocks.remove(ix as usize - 1 + 1);
+                blocks.remove(ix as usize - 1);
+                blocks.insert(ix as usize - 1, (true, new_block_space, None, false));
             }
+            if ix > 0 && blocks[ix as usize - 1 - 1].0 {
+                let (left_is_free, left_space, _, _) = blocks[ix as usize - 1 - 1];
+                if left_is_free {
+                    new_block_space += left_space;
+                }
+                blocks.remove(ix as usize - 1 - 1);
+                blocks.remove(ix as usize - 1 - 1);
+                blocks.insert(ix as usize - 1 - 1, (true, new_block_space, None, false));
+            }
+            // Move block in file system
+            if block_space > space {
+                let prev_len = blocks.len();
+                blocks.insert(block_ix, (true, block_space - space, None, false));
+                if prev_len == blocks.len() {
+                    panic!("Did not change length");
+                }
+            }
+            blocks.insert(block_ix, (false, space, file_id, true));
         }
-        if 0.ne(&space) {
-            flat_vec.extend(vec![".".to_string(); space as usize]);
-            break;
-        }
-        ix += 1;
+        ix -= 1;
     }
-    for (is_free, space, file_id) in blocks {
-        if is_free {
-            flat_vec.extend(vec![".".to_string(); space as usize]);
-        } else {
-            flat_vec.extend(vec![file_id.unwrap().to_string(); space as usize]);
-        }
+    let mut flat_vec = Vec::new();
+    for (_, space, file_id, _) in blocks {
+        flat_vec.extend(vec![file_id; space as usize]);
     }
-    print_flat_vec(&flat_vec);
 
     p2 += collapse_flat_vec(&flat_vec);
 
