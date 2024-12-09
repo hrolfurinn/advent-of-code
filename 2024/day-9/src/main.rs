@@ -40,30 +40,24 @@ fn main() -> Result<()> {
     // Each block in the file system has these associated data:
     // (is_free,space,file_id,has_been_moved)
     // Note: Technically, each "block" here is "space" many blocks, based on the problem statement.
-    let mut blocks: Vec<(bool, i32, Option<usize>, bool)> = Vec::new(); 
-
-    for (ix, space) in input
+    let mut blocks: Vec<(bool, i32, Option<usize>, bool)> = input
         .trim()
         .chars()
         .map(|char| char.to_digit(10).unwrap() as i32)
         .enumerate()
-    {
-        if ix % 2 == 0 {
-            blocks.push((false, space, Some(ix / 2), false));
-        } else {
-            blocks.push((true, space, None, false));
-        }
-    }
+        .map(|(ix, space)| {
+            (
+                ix % 2 != 0,
+                space,
+                if ix % 2 != 0 { None } else { Some(ix / 2) },
+                false,
+            )
+        })
+        .collect_vec();
 
     let flat_vec = blocks
         .iter()
-        .flat_map(|&(is_free, space, file_id, _)| {
-            if is_free {
-                vec![None; space as usize]
-            } else {
-                vec![Some(file_id.unwrap()); space as usize]
-            }
-        })
+        .flat_map(|&(_, space, file_id, _)| vec![file_id; space as usize])
         .collect_vec();
 
     p1 += collapse_flat_vec(&flat_vec);
