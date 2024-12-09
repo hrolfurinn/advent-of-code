@@ -7,13 +7,30 @@ use std::ops::{Index, IndexMut};
 fn print_flat_vec(flat_vec: &Vec<Option<usize>>) {
     for char in flat_vec {
         print!(
-            "{}|",
+            "{}",
             if char.is_some() {
                 char.unwrap().to_string()
             } else {
-                "".to_string()
+                ".".to_string()
             }
         )
+    }
+    println!();
+}
+
+fn print_blocks(blocks: &Vec<(bool, i32, Option<usize>, bool)>) {
+    for block in blocks.iter() {
+        print!("|");
+        (0..block.1).for_each(|_| {
+            print!(
+                "{}",
+                if block.0 {
+                    ".".to_string()
+                } else {
+                    block.2.unwrap().to_string()
+                }
+            )
+        });
     }
     println!();
 }
@@ -45,7 +62,7 @@ fn collapse_flat_vec(flat_vec: &Vec<Option<usize>>) -> usize {
 }
 
 fn main() -> Result<()> {
-    let test = false;
+    let test = true;
 
     let input = load_input(test);
 
@@ -82,11 +99,15 @@ fn main() -> Result<()> {
 
     let mut ix = blocks.len() as i32 - 1;
     while ix >= 0 {
+        println!("In {ix}");
+        print_blocks(&blocks);
+
         let (is_free, space, _, has_been_moved) = blocks[ix as usize];
         if is_free || has_been_moved {
             ix -= 1;
             continue;
         }
+        println!("Need space: {space}");
         if let Some(block_ix) =
             blocks
                 .iter()
@@ -95,35 +116,61 @@ fn main() -> Result<()> {
                     block_ix < ix as usize && *block_is_free && space.le(block_space)
                 })
         {
+            println!("Found needed space at {block_ix}");
+
+            // We start by removing the to-be-moved value from the file system. Since this will be
+            // replaced by free space, we need to take care to remove its neighbors as well, which
+            // we do safely without checking whether one of the neighbors is the to-be-moved-to
+            // block in the file system.
+            let mut right_side = None; // We are not guaranteed a right side in bounds
+            if ix + 1 < blocks.len() as i32 {
+                right_side = Some(blocks.remove(ix as usize + 1));
+            }
             let (_, space, file_id, _) = blocks.remove(ix as usize);
-            blocks.insert(ix as usize, (true, space, None, false));
-            
+            let left_side = blocks.remove(ix as usize - 1); // We are guaranteed a left side in bounds
+
+            println!("Removed all three surrounding elements");
+            print_blocks(&blocks);
+            if let Some(right_side) = right_side {
+                if right_side.0 {
+                    blocks.insert(
+                        ix as usize - 1,
+                        (true, space + right_side.1, None, false),
+                    );
+                } else {
+                    blocks.insert(ix as usize - 1, right_side);
+                    blocks.insert(ix as usize - 1, (true, space, None, false));
+                }
+            } else {
+                blocks.insert(ix as usize - 1, (true, space, None, false));
+            }
+            if left_side.0 {
+                let (_, curr_space, _, _) = blocks.remove(ix as usize - 1);
+                blocks.insert(
+                    ix as usize - 1,
+                    (true, curr_space + left_side.1, None, false),
+                );
+            } else {
+                blocks.insert(ix as usize - 1, left_side);
+            }
+            println!("Attempted merging");
+            print_blocks(&blocks);
+
             // Removing the block of free space from the filesystem leaves all indices after it
             // shifted by 1, which includes all relevant indices in the rest of this loop
             let (block_is_free, block_space, _, _) = blocks.remove(block_ix);
             if !block_is_free {
                 panic!("Found non-free block")
             };
+            if ix == 8855 && block_ix == 8854 {
+                println!("print here");
+                println!(
+                    "if statement {} {}",
+                    ix as usize - 1 + 1 < blocks.len(),
+                    blocks[ix as usize - 1 + 1].0
+                )
+            }
 
-            let mut new_block_space = block_space;
-            if ix as usize - 1 + 1 < blocks.len() && ix as usize - 1 != block_ix && blocks[ix as usize - 1 + 1].0 {
-                let (left_is_free, left_space, _, _) = blocks[ix as usize - 1 + 1];
-                if left_is_free {
-                    new_block_space += left_space;
-                }
-                blocks.remove(ix as usize - 1 + 1);
-                blocks.remove(ix as usize - 1);
-                blocks.insert(ix as usize - 1, (true, new_block_space, None, false));
-            }
-            if ix > 0 && blocks[ix as usize - 1 - 1].0 {
-                let (left_is_free, left_space, _, _) = blocks[ix as usize - 1 - 1];
-                if left_is_free {
-                    new_block_space += left_space;
-                }
-                blocks.remove(ix as usize - 1 - 1);
-                blocks.remove(ix as usize - 1 - 1);
-                blocks.insert(ix as usize - 1 - 1, (true, new_block_space, None, false));
-            }
             // Move block in file system
             if block_space > space {
                 let prev_len = blocks.len();
