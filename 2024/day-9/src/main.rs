@@ -39,6 +39,7 @@ fn collapse_flat_vec(flat_vec: &Vec<Option<usize>>) -> usize {
     let mut output = flat_vec.clone();
     let mut ix = 0;
     while ix < output.len() {
+        print_flat_vec(&output);
         if output[ix].is_some() {
             ix += 1;
             continue;
@@ -57,12 +58,12 @@ fn collapse_flat_vec(flat_vec: &Vec<Option<usize>>) -> usize {
     output
         .iter()
         .enumerate()
-        .map(|(ix, n)| ix * n.unwrap())
+        .map(|(ix, n)| { println!("{} * {} = {}", ix, n.unwrap(), ix * n.unwrap()); ix * n.unwrap() } )
         .sum()
 }
 
 fn main() -> Result<()> {
-    let test = true;
+    let test = false;
 
     let input = load_input(test);
 
@@ -188,7 +189,11 @@ fn main() -> Result<()> {
         flat_vec.extend(vec![file_id; space as usize]);
     }
 
-    p2 += collapse_flat_vec(&flat_vec);
+    println!("part 2:");
+    print_flat_vec(&flat_vec);
+    println!("part 2 collapsing:");
+
+    p2 += flat_vec.iter().enumerate().map(|(ix,n)| ix * n.unwrap_or(0)).sum::<usize>();
 
     println!("p1: {p1}\np2: {p2}");
 
