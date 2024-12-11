@@ -26,7 +26,6 @@ fn count_final_stones(stone: u64, iterations: u32, cache: &mut HashMap<(u64,u32)
     let num_digits = get_digit_num(stone);
     if num_digits % 2 == 0 {
         let half = 10_u64.pow(num_digits / 2);
-        vec![stone / half, stone % half];
         // We compute the second half before the first since it is smaller and therefore more
         // likely to affect the cache
         let second_result = count_final_stones(stone % half, iterations - 1, cache);
