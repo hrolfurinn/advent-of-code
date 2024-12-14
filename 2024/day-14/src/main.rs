@@ -20,12 +20,15 @@ fn main() -> Result<()> {
     let half_width = width / 2;
     let half_height = height / 2;
 
+    let mut robots = Vec::new();
+
     for line in input.lines() {
         let (px, py, vx, vy) = line
             .split(|c: char| !c.is_digit(10) && c != '-')
             .filter_map(|num| num.parse::<i32>().ok())
             .collect_tuple()
             .unwrap();
+        robots.push(((px, py), (vx, vy)));
         match (
             (px + (100 * vx)).rem_euclid(width).cmp(&half_width),
             (py + (100 * vy)).rem_euclid(height).cmp(&half_height),
@@ -36,6 +39,32 @@ fn main() -> Result<()> {
             (Greater, Greater) => quadrants[3] += 1,
             _ => {}
         }
+    }
+
+    for ix in 0..(101 * 103) {
+        println!("{ix}");
+        let mut grid = vec![vec![false; width as usize]; height as usize];
+        let mut new_robots = Vec::new();
+        for (position, velocity) in robots.iter() {
+            grid[position.1 as usize][position.0 as usize] = true;
+            new_robots.push((
+                (
+                    (position.0 + velocity.0).rem_euclid(width),
+                    (position.1 + velocity.1).rem_euclid(height),
+                ),
+                *velocity,
+            ));
+        }
+        if ix % 101 == 79 {
+            for row in grid.iter() {
+                for spot in row.iter() {
+                    print!("{}", if *spot { "X" } else { "." });
+                }
+                println!();
+            }
+        }
+        robots = new_robots;
+        println!("-----------------------------------------------------");
     }
 
     p1 += quadrants.iter().product::<u32>();
