@@ -4,6 +4,7 @@ use std::collections::BinaryHeap;
 use std::collections::{HashMap, HashSet};
 use std::fs::read_to_string;
 use std::hash::{Hash, Hasher};
+use std::io::{self, Write};
 use std::io::{Read, Result};
 use std::ops::{Index, IndexMut};
 
@@ -176,6 +177,11 @@ fn get_path_score(came_from: &HashMap<State, State>, current: State) -> u32 {
 }
 
 fn print_path(came_from: &HashMap<State, State>, current: State, grid: &Grid<bool>) {
+    let mut buffer = String::new();
+
+    // Move the cursor to the top-left
+    buffer.push_str("\x1B[H");
+
     let mut current = current;
     let mut path = HashSet::new();
     path.insert(current.point);
@@ -191,20 +197,22 @@ fn print_path(came_from: &HashMap<State, State>, current: State, grid: &Grid<boo
                 x: x as i32,
                 y: y as i32,
             };
-            print!(
-                "{}",
-                if path.contains(&point) {
-                    "o"
-                } else if grid[point] {
-                    "#"
-                } else {
-                    "."
-                }
-            );
+            if path.contains(&point) {
+                buffer.push('+');
+            } else if grid[point] {
+                buffer.push('\u{2588}');
+            } else {
+                buffer.push(' ');
+            }
         }
-        println!();
+        buffer.push('\n');
     }
-    println!();
+    buffer.push('\n');
+
+    // Write the buffer to stdout in one go
+    io::stdout().write_all(buffer.as_bytes()).unwrap();
+    io::stdout().flush().unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(4));
 }
 
 fn a_star(start: Point, end: Point, grid: &Grid<bool>, h: &dyn Fn(Point) -> u32) -> u32 {
@@ -224,8 +232,8 @@ fn a_star(start: Point, end: Point, grid: &Grid<bool>, h: &dyn Fn(Point) -> u32)
 
     while !open_set.is_empty() {
         let current = open_set.pop().unwrap().state; // Lowest f-score state
-                                                     // print_path(&came_from, current, grid);
         if current.point == end {
+            print_path(&came_from, current, grid);
             return get_path_score(&came_from, current);
         }
 
@@ -288,7 +296,7 @@ fn main() -> Result<()> {
         }
         if ix + 1 == fallen {
             p1 += a_star(start, end, &grid, &h);
-        } else if ix + 1 > fallen && a_star(start, end, &grid, &h) == 0 {
+        } else if a_star(start, end, &grid, &h) == 0 {
             p2 = point;
             break;
         }
