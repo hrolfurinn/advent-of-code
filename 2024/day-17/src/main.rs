@@ -23,14 +23,14 @@ fn run(program: &Vec<u64>, a: u64, b: u64, c: u64) -> Vec<u64> {
         };
 
         match opcode {
-            0 => { a /= 1 << combo(literal_operand); }
+            0 => { a >>= combo(literal_operand); }
             1 => { b ^= literal_operand; }
             2 => { b = combo(literal_operand) % 8; }
             3 => { if a != 0 { instruction_ix = literal_operand as usize; continue; } }
             4 => { b = b ^ c; }
             5 => { output.push(combo(literal_operand) % 8); }
-            6 => { b = a / (1 << combo(literal_operand)); }
-            7 => { c = a / (1 << combo(literal_operand)); }
+            6 => { b = a >> combo(literal_operand); }
+            7 => { c = a >> combo(literal_operand); }
             _ => unreachable!("Invalid opcode"),
         }
         instruction_ix += 2;
