@@ -35,7 +35,7 @@ fn main() {
 
     let h = |state: State| state.point.dist(&end);
 
-    let neighbors = |state: State| {
+    let get_neighbors = |state: State| {
         CARDINALS
             .iter()
             .filter_map(|direction| {
@@ -74,7 +74,7 @@ fn main() {
 
     let is_valid = |_: &Vec<State>| true;
 
-    let default = a_star(start_state, &h, &neighbors, &is_end, Some(1), &is_valid)[0].len();
+    let default = a_star(start_state, &h, &get_neighbors, &is_end, Some(1), &is_valid)[0].len();
 
 
     println!("Total moves without teleporting: {}", default);
@@ -89,7 +89,7 @@ fn main() {
         moves_left: 2,
     };
 
-    let save = a_star(start_state, &h, &neighbors, &is_end, None, &is_valid);
+    let save = a_star(start_state, &h, &get_neighbors, &is_end, None, &is_valid);
 
     println!("Paths that save: {}", save.len())
 }

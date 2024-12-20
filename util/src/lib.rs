@@ -179,7 +179,7 @@ fn reconstruct_path<T: Hash + Eq + Copy + Display>(
 pub fn a_star<T: Hash + Eq + Copy + Display>(
     start: T,
     h: &dyn Fn(T) -> u32,
-    neighbors: &dyn Fn(T) -> Vec<T>,
+    get_neighbors: &dyn Fn(T) -> Vec<T>,
     is_end: &dyn Fn(T) -> bool,
     number: Option<u32>,
     is_valid: &dyn Fn(&Vec<T>) -> bool,
@@ -222,7 +222,7 @@ pub fn a_star<T: Hash + Eq + Copy + Display>(
             }
         }
 
-        for neighbor in neighbors(current).iter() {
+        for neighbor in get_neighbors(current).iter() {
             let tentative_g_score = g_score[&current] + 1;
             if !g_score.contains_key(&neighbor) || tentative_g_score < g_score[&neighbor] {
                 came_from.insert(*neighbor, current);
