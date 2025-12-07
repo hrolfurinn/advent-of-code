@@ -25,6 +25,11 @@ struct Grid {
     width: usize,
 }
 
+struct GridIntoIterator {
+    grid: Grid,
+    index: Point,
+}
+
 impl Grid {
     fn parse(input: String) -> Self {
         let grid = input.lines().map(|line| {
@@ -85,6 +90,7 @@ fn main() -> Result<()> {
                     if !grid.in_grid(next_point) || grid[next_point] != grid[*point] + 1 {
                     } else if grid[next_point] == 9 {
                         summits.insert((next_point.x, next_point.y));
+                        point
                         p2 += 1;
                     } else {
                         next_points.push(next_point);

@@ -10,8 +10,8 @@ use std::ops::{Index, IndexMut};
 
 #[derive(Eq, PartialEq, Clone, Copy, Debug)]
 pub struct Point {
-    x: i32,
-    y: i32,
+    pub x: i32,
+    pub y: i32,
 }
 
 impl Point {
@@ -147,8 +147,8 @@ impl<T> IndexMut<Point> for Grid<T> {
 
 #[derive(Eq, Clone, Copy, PartialEq)]
 pub struct StateWithScore<T> {
-    f_score: u32,
-    state: T,
+    pub f_score: u32,
+    pub state: T,
 }
 
 impl<T: Eq> Ord for StateWithScore<T> {
@@ -179,9 +179,9 @@ fn reconstruct_path<T: Hash + Eq + Copy + Display>(
 pub fn a_star<T: Hash + Eq + Copy + Display>(
     start: T,
     h: &dyn Fn(T) -> u32,
+    d: &dyn Fn(&T, &T) -> u32,
     get_neighbors: &dyn Fn(T) -> Vec<T>,
     is_end: &dyn Fn(T) -> bool,
-    number: Option<u32>,
     is_valid: &dyn Fn(&Vec<T>) -> bool,
 ) -> Vec<Vec<T>> {
     let mut open_set: BinaryHeap<StateWithScore<T>> = BinaryHeap::new(); // Min-heap since we wrap values in Reverse
@@ -199,8 +199,6 @@ pub fn a_star<T: Hash + Eq + Copy + Display>(
 
     let mut paths = Vec::new();
 
-    let mut count = 0;
-
     while !open_set.is_empty() {
         let current = open_set.pop().unwrap().state; // Lowest f-score state
         println!("Current: {}", current);
@@ -208,22 +206,13 @@ pub fn a_star<T: Hash + Eq + Copy + Display>(
             let path = reconstruct_path(&came_from, current);
             if is_valid(&path) {
                 println!("Found valid path");
-                count += 1;
                 paths.push(path);
-                if let Some(number) = number {
-                    println!("Found a number value");
-                    if count == number {
-                        return paths;
-                    }
-                } else {
-                    println!("Found no number value");
-                }
-
+                return paths;
             }
         }
 
         for neighbor in get_neighbors(current).iter() {
-            let tentative_g_score = g_score[&current] + 1;
+            let tentative_g_score = g_score[&current] + d(&current, &neighbor);
             if !g_score.contains_key(&neighbor) || tentative_g_score < g_score[&neighbor] {
                 came_from.insert(*neighbor, current);
                 g_score.insert(*neighbor, tentative_g_score);

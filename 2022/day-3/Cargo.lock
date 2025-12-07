@@ -3,25 +3,10 @@
 version = 4
 
 [[package]]
-name = "day-17"
+name = "day-3"
 version = "0.1.0"
 dependencies = [
- "itertools 0.13.0",
-]
-
-[[package]]
-name = "day-20"
-version = "0.1.0"
-dependencies = [
- "itertools 0.13.0",
- "util",
-]
-
-[[package]]
-name = "day01"
-version = "0.1.0"
-dependencies = [
- "itertools 0.14.0",
+ "itertools",
 ]
 
 [[package]]
@@ -37,20 +22,4 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
 dependencies = [
  "either",
-]
-
-[[package]]
-name = "itertools"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
-dependencies = [
- "either",
-]
-
-[[package]]
-name = "util"
-version = "0.1.0"
-dependencies = [
- "itertools 0.13.0",
 ]

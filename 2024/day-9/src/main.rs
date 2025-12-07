@@ -8,13 +8,8 @@ fn collapse_flat_vec(flat_vec: &Vec<Option<usize>>) -> usize {
     while ix < output.len() {
         if output[ix].is_some() {
             ix += 1;
-            continue;
-        }
-        if let Some(last) = output.pop() {
-            if last.is_none() {
-                continue;
-            }
-            output[ix] = last;
+        } else if let Some(Some(last)) = output.pop() {
+            output[ix] = Some(last);
             ix += 1;
         }
     }
